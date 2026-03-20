@@ -18,4 +18,5 @@ viz = render(nodes, edges)
 
 html = sprint(show, MIME"text/html"(), viz)
 @test occursin("large-graphs-jl-root", html)
-@test occursin("sigma-viewer.js", read(joinpath(pkgdir(LargeGraphsJL), "assets", "sigma-viewer.js"), String)) == false
+@test occursin("window.LargeGraphsJL.render", html)
+@test occursin("Loading Sigma.js", read(joinpath(pkgdir(LargeGraphsJL), "assets", "sigma-viewer.js"), String))

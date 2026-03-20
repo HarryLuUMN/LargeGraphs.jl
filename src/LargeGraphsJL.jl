@@ -87,8 +87,38 @@ function graph(nodes, edges; id=string("sigma-", uuid4()), config=SigmaConfig())
     SigmaGraph(string(id), _normalize_nodes(nodes), _normalize_edges(edges), config)
 end
 
-function render(nodes, edges; kwargs...)
-    graph(nodes, edges; kwargs...)
+function render(
+    nodes,
+    edges;
+    id=string("sigma-", uuid4()),
+    width="100%",
+    height="700px",
+    background="#ffffff",
+    camera_ratio=1.0,
+    render_edge_labels=false,
+    hide_edges_on_move=false,
+    label_density=1.0,
+    label_grid_cell_size=80,
+    max_node_size=16.0,
+    min_node_size=2.0,
+)
+    graph(
+        nodes,
+        edges;
+        id=id,
+        config=SigmaConfig(
+            width=width,
+            height=height,
+            background=background,
+            camera_ratio=camera_ratio,
+            render_edge_labels=render_edge_labels,
+            hide_edges_on_move=hide_edges_on_move,
+            label_density=label_density,
+            label_grid_cell_size=label_grid_cell_size,
+            max_node_size=max_node_size,
+            min_node_size=min_node_size,
+        ),
+    )
 end
 
 function savehtml(path::AbstractString, value::SigmaGraph)
@@ -100,6 +130,10 @@ end
 
 function Base.show(io::IO, ::MIME"text/html", value::SigmaGraph)
     print(io, _html(value))
+end
+
+function Base.show(io::IO, ::MIME"text/plain", value::SigmaGraph)
+    print(io, "SigmaGraph($(length(value.nodes)) nodes, $(length(value.edges)) edges)")
 end
 
 function _normalize_nodes(nodes)

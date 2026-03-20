@@ -30,14 +30,12 @@ function random_graph(node_count::Integer=10_000, edge_count::Integer=30_000; se
     render(
         nodes,
         edges;
-        config=SigmaConfig(
-            height="780px",
-            render_edge_labels=false,
-            hide_edges_on_move=true,
-            label_density=0.6,
-            max_node_size=10.0,
-            min_node_size=1.5,
-        ),
+        height="780px",
+        render_edge_labels=false,
+        hide_edges_on_move=true,
+        label_density=0.6,
+        max_node_size=10.0,
+        min_node_size=1.5,
     )
 end
 
