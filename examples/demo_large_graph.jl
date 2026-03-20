@@ -15,16 +15,21 @@ function random_graph(node_count::Integer=10_000, edge_count::Integer=30_000; se
         )
     end
 
-    edges = Vector{NamedTuple}(undef, edge_count)
-    for i in 1:edge_count
+    edges = NamedTuple[]
+    seen = Set{Tuple{Int, Int}}()
+    while length(edges) < edge_count
         source = rand(rng, 1:node_count)
         target = rand(rng, 1:node_count)
-        edges[i] = (
+        source == target && continue
+        edge = source < target ? (source, target) : (target, source)
+        edge in seen && continue
+        push!(seen, edge)
+        push!(edges, (
             source=string(source),
             target=string(target),
             size=0.5,
             color="#cbd5e1",
-        )
+        ))
     end
 
     render(

@@ -42,7 +42,7 @@
       const payload = JSON.parse(payloadNode.textContent || "{}");
       const { graphology, Sigma } = await loadModules();
       const Graph = graphology.Graph || graphology.default?.Graph;
-      const graph = new Graph();
+      const graph = new Graph({ multi: true, allowSelfLoops: true });
 
       for (const node of payload.nodes || []) {
         graph.addNode(node.id, node);
