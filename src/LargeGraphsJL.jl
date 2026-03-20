@@ -157,7 +157,7 @@ _edge(value::EdgeSpec) = value
 
 function _node(value::NamedTuple)
     NodeSpec(
-        get(value, :id, error("Node tuples must define :id"));
+        _required_get(value, :id, "Node tuples must define :id");
         x=get(value, :x, 0.0),
         y=get(value, :y, 0.0),
         size=get(value, :size, 1.0),
@@ -169,8 +169,8 @@ end
 
 function _edge(value::NamedTuple)
     EdgeSpec(
-        get(value, :source, error("Edge tuples must define :source")),
-        get(value, :target, error("Edge tuples must define :target"));
+        _required_get(value, :source, "Edge tuples must define :source"),
+        _required_get(value, :target, "Edge tuples must define :target");
         id=get(value, :id, nothing),
         size=get(value, :size, 1.0),
         label=get(value, :label, nothing),
@@ -181,25 +181,25 @@ end
 
 function _node(value::AbstractDict)
     NodeSpec(
-        get(value, "id", get(value, :id, error("Node dicts must define id")));
-        x=get(value, "x", get(value, :x, 0.0)),
-        y=get(value, "y", get(value, :y, 0.0)),
-        size=get(value, "size", get(value, :size, 1.0)),
-        label=get(value, "label", get(value, :label, nothing)),
-        color=get(value, "color", get(value, :color, nothing)),
-        attributes=get(value, "attributes", get(value, :attributes, Dict{String, Any}())),
+        _coalesce_keys(value, "id", :id, "Node dicts must define id");
+        x=_coalesce_keys(value, "x", :x, 0.0),
+        y=_coalesce_keys(value, "y", :y, 0.0),
+        size=_coalesce_keys(value, "size", :size, 1.0),
+        label=_coalesce_keys(value, "label", :label, nothing),
+        color=_coalesce_keys(value, "color", :color, nothing),
+        attributes=_coalesce_keys(value, "attributes", :attributes, Dict{String, Any}()),
     )
 end
 
 function _edge(value::AbstractDict)
     EdgeSpec(
-        get(value, "source", get(value, :source, error("Edge dicts must define source"))),
-        get(value, "target", get(value, :target, error("Edge dicts must define target")));
-        id=get(value, "id", get(value, :id, nothing)),
-        size=get(value, "size", get(value, :size, 1.0)),
-        label=get(value, "label", get(value, :label, nothing)),
-        color=get(value, "color", get(value, :color, nothing)),
-        attributes=get(value, "attributes", get(value, :attributes, Dict{String, Any}())),
+        _coalesce_keys(value, "source", :source, "Edge dicts must define source"),
+        _coalesce_keys(value, "target", :target, "Edge dicts must define target");
+        id=_coalesce_keys(value, "id", :id, nothing),
+        size=_coalesce_keys(value, "size", :size, 1.0),
+        label=_coalesce_keys(value, "label", :label, nothing),
+        color=_coalesce_keys(value, "color", :color, nothing),
+        attributes=_coalesce_keys(value, "attributes", :attributes, Dict{String, Any}()),
     )
 end
 
@@ -298,5 +298,21 @@ end
 
 _string_or_nothing(value::Nothing) = nothing
 _string_or_nothing(value) = string(value)
+
+function _required_get(value::NamedTuple, key::Symbol, message::AbstractString)
+    haskey(value, key) || error(message)
+    getfield(value, key)
+end
+
+function _coalesce_keys(value::AbstractDict, primary, secondary, default)
+    if haskey(value, primary)
+        return value[primary]
+    end
+    if haskey(value, secondary)
+        return value[secondary]
+    end
+    default isa AbstractString && occursin("must define", default) && error(default)
+    default
+end
 
 end
