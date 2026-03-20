@@ -10,6 +10,8 @@ Pkg.develop(path=".")
 Pkg.instantiate()
 ```
 
+For notebook use, install IJulia in the Julia environment that provides your Jupyter kernel.
+
 ## Quick start
 
 ```julia

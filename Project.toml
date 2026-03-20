@@ -1,7 +1,7 @@
 name = "LargeGraphsJL"
 uuid = "0f7f7d18-b84d-4dfd-9c1e-06e0662f86c2"
-authors = ["OpenAI Codex"]
 version = "0.1.0"
+authors = ["OpenAI Codex"]
 
 [deps]
 JSON3 = "0f8b85d8-7281-11e9-16c2-39a750bddbf1"
