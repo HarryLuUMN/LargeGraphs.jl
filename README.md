@@ -1,8 +1,20 @@
 # LargeGraphsJL
 
-`LargeGraphsJL` is a Julia package for rendering large interactive graphs in IJulia and Jupyter notebooks with Sigma.js.
+`LargeGraphsJL` is a small Julia package for rendering interactive graph
+visualizations with [Sigma.js](https://www.sigmajs.org/) in IJulia and Jupyter
+notebooks. It accepts plain Julia collections, produces notebook-friendly HTML,
+and can export standalone HTML files for sharing outside Julia.
 
-## Install
+## Why this package
+
+- Targets notebook workflows where fast visual inspection matters.
+- Accepts lightweight Julia data structures instead of requiring a graph type.
+- Keeps the package surface small enough to understand quickly.
+- Supports standalone HTML export for demos and reports.
+
+## Installation
+
+### Add from a local checkout
 
 ```julia
 using Pkg
@@ -10,25 +22,185 @@ Pkg.develop(path=".")
 Pkg.instantiate()
 ```
 
-For notebook use, install IJulia in the Julia environment that provides your Jupyter kernel.
+### Add from a Git repository
 
-## Quick start
+```julia
+using Pkg
+Pkg.add(url="git@github.com:HarryLuUMN/large-graphs-jl.git")
+```
+
+### Notebook prerequisite
+
+Install `IJulia` in the Julia environment that backs your notebook kernel:
+
+```julia
+using Pkg
+Pkg.add("IJulia")
+```
+
+If the package is installed in one environment and the notebook kernel points
+at another, `using LargeGraphsJL` will fail inside the notebook even if it works
+from the terminal.
+
+## Quick Start
 
 ```julia
 using LargeGraphsJL
 
 nodes = [
-    (id="a", x=0.0, y=0.0, label="A", color="#2563eb"),
-    (id="b", x=1.0, y=1.0, label="B", color="#059669"),
+    (id="a", x=0.0, y=0.0, size=3.0, label="A", color="#2563eb"),
+    (id="b", x=1.0, y=1.0, size=2.5, label="B", color="#059669"),
+    (id="c", x=1.3, y=0.1, size=2.0, label="C", color="#d97706"),
 ]
 
 edges = [
-    (source="a", target="b", color="#94a3b8"),
+    (source="a", target="b", size=0.8, color="#94a3b8"),
+    (source="a", target="c", size=0.8, color="#cbd5e1"),
 ]
 
-viz = render(nodes, edges; height="500px", hide_edges_on_move=true)
+viz = render(
+    nodes,
+    edges;
+    height="520px",
+    background="#f8fafc",
+    hide_edges_on_move=true,
+    max_node_size=12.0,
+)
+
 display(viz)
 savehtml("graph.html", viz)
 ```
 
-The frontend bootstrap script is bundled in `assets/sigma-viewer.js`. It loads Sigma.js and Graphology as ESM modules inside the notebook output cell.
+## Notebook Usage
+
+`SigmaGraph` implements HTML display, so a notebook cell only needs to evaluate
+or `display` the value returned by `render(...)` or `graph(...)`.
+
+The repository includes:
+
+- `examples/demo_notebook.ipynb` for an IJulia notebook workflow.
+- `examples/demo_large_graph.jl` for script-based standalone export.
+
+Typical notebook setup:
+
+```julia
+using Pkg
+Pkg.activate(isdir(joinpath(pwd(), "src")) ? pwd() : joinpath(pwd(), ".."))
+Pkg.instantiate()
+
+using LargeGraphsJL
+```
+
+When a graph does not render in Jupyter, open the browser console first. The
+viewer loads Sigma.js and Graphology as browser ESM modules, so frontend errors
+usually show up there immediately.
+
+## API Overview
+
+### Constructors
+
+- `NodeSpec(id; x, y, size, label, color, attributes)`
+- `EdgeSpec(source, target; id, size, label, color, attributes)`
+- `SigmaConfig(; width, height, background, camera_ratio, render_edge_labels, hide_edges_on_move, label_density, label_grid_cell_size, max_node_size, min_node_size)`
+
+### Main functions
+
+- `graph(nodes, edges; id, config)` normalizes graph data into a `SigmaGraph`.
+- `render(nodes, edges; kwargs...)` builds a `SigmaGraph` with inline render options.
+- `savehtml(path, graph)` writes a standalone HTML file.
+- `savehtml(path, nodes, edges; kwargs...)` combines rendering and export in one call.
+
+### Accepted input forms
+
+Nodes can be provided as:
+
+- `NodeSpec`
+- named tuples such as `(id="a", x=0.0, y=1.0, color="#2563eb")`
+- dictionaries with string or symbol keys
+- tuples of the form `(id, x, y, size=1.0, label=nothing)`
+
+Edges can be provided as:
+
+- `EdgeSpec`
+- named tuples such as `(source="a", target="b", size=0.8)`
+- dictionaries with string or symbol keys
+- tuples of the form `(source, target, size=1.0, label=nothing)`
+
+## Examples
+
+### Save directly to HTML
+
+```julia
+savehtml(
+    "report-graph.html",
+    nodes,
+    edges;
+    width="100%",
+    height="720px",
+    background="#ffffff",
+)
+```
+
+### Mix typed and untyped graph items
+
+```julia
+nodes = [
+    NodeSpec("hub"; x=0.0, y=0.0, size=4.0, label="Hub", color="#1d4ed8"),
+    Dict("id" => "leaf-1", "x" => -1.0, "y" => 0.5, "color" => "#0f766e"),
+    (id="leaf-2", x=1.0, y=-0.2, color="#b45309"),
+]
+
+edges = [
+    EdgeSpec("hub", "leaf-1"; size=0.7, color="#cbd5e1"),
+    (source="hub", target="leaf-2", size=0.7, color="#cbd5e1"),
+]
+
+display(render(nodes, edges; render_edge_labels=false))
+```
+
+## Troubleshooting
+
+### `using LargeGraphsJL` fails in the notebook
+
+The notebook kernel is usually using a different Julia environment than the one
+where the package was added. Activate the intended environment in the notebook
+before importing the package.
+
+### The output cell stays blank
+
+Open the browser developer console. Frontend loading failures, blocked network
+requests, or JavaScript module errors surface there.
+
+### The exported HTML opens but the graph does not appear
+
+The standalone HTML still loads Sigma.js dependencies from a CDN at runtime. If
+the viewing environment blocks external network access, the graph cannot finish
+bootstrapping.
+
+### Large graphs feel slow
+
+Reduce labels, lower node sizes, and enable `hide_edges_on_move=true`. The demo
+script uses these settings for a reason.
+
+## Limitations
+
+- This package currently targets notebook and HTML export workflows, not native GUI rendering.
+- The frontend depends on CDN-hosted Sigma.js and Graphology modules.
+- The package expects caller-supplied coordinates; it does not compute layouts.
+- Validation of duplicate node IDs or missing referenced nodes is delegated to the browser-side graph construction path.
+- Very large graphs still depend on browser memory and WebGL performance.
+
+## Additional Documentation
+
+- [`docs/index.md`](docs/index.md)
+- [`docs/api.md`](docs/api.md)
+- [`docs/notebooks.md`](docs/notebooks.md)
+- [`docs/troubleshooting.md`](docs/troubleshooting.md)
+
+## Repository Layout
+
+- `src/LargeGraphsJL.jl`: package source and public API.
+- `assets/sigma-viewer.js`: browser bootstrap for Sigma.js rendering.
+- `examples/demo_notebook.ipynb`: notebook demo.
+- `examples/demo_large_graph.jl`: script demo with standalone export.
+- `test/runtests.jl`: package tests.
