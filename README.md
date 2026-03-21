@@ -62,8 +62,9 @@ edges = [
 viz = render(
     nodes,
     edges;
-    layout=:spring,
-    iterations=80,
+    layout=:force_directed,
+    algorithm=:fruchterman_reingold,
+    iterations=120,
     seed=7,
     height="520px",
     background="#f8fafc",
@@ -116,7 +117,8 @@ usually show up there immediately.
 - `random_layout(nodes; seed, extent)` assigns random coordinates.
 - `circular_layout(nodes; radius, start_angle)` places nodes on a circle.
 - `grid_layout(nodes; columns, spacing)` places nodes on a centered grid.
-- `spring_layout(nodes, edges; iterations, seed, extent, gravity, cooling)` runs a lightweight force-directed layout.
+- `force_directed_layout(nodes, edges; algorithm=:fruchterman_reingold, kwargs...)` runs a force-directed family with `:fruchterman_reingold`, `:kamada_kawai`, or `:forceatlas2`.
+- `spring_layout(nodes, edges; iterations, seed, extent, gravity, cooling)` remains as a compatibility alias for Fruchterman-Reingold.
 
 ### Layout usage
 
@@ -130,14 +132,19 @@ viz = render(positioned_nodes, edges; height="520px")
 Or you can let `render` apply the layout for you:
 
 ```julia
-viz = render(nodes, edges; layout=:spring, iterations=100, seed=3)
+viz = render(nodes, edges; layout=:force_directed, algorithm=:kamada_kawai, iterations=120, seed=3)
 ```
 
 `layout` accepts:
 
-- symbols: `:random`, `:circular`, `:grid`, `:spring`
+- symbols: `:random`, `:circular`, `:grid`, `:spring`, `:force_directed`
 - strings with the same names
 - a custom callable of the form `(nodes, edges; kwargs...) -> positioned_nodes`
+
+With `layout=:force_directed`, select the specific algorithm via `algorithm=`:
+- `:fruchterman_reingold`
+- `:kamada_kawai`
+- `:forceatlas2`
 
 ### Accepted input forms
 
@@ -224,8 +231,9 @@ bootstrapping.
 ### Large graphs feel slow
 
 Reduce labels, lower node sizes, and enable `hide_edges_on_move=true`. The demo
-script uses these settings for a reason. For layouts, `spring_layout` is the
-most expensive option because it does iterative force simulation.
+script uses these settings for a reason. Force-directed layouts (`:spring` and
+`:force_directed`) use iterative simulation and are generally more expensive
+than `:random`, `:circular`, or `:grid`.
 
 ## Limitations
 
@@ -233,7 +241,7 @@ most expensive option because it does iterative force simulation.
 - The frontend depends on CDN-hosted Sigma.js and Graphology modules.
 - The package includes lightweight layouts, not a full graph drawing toolkit.
 - Validation of duplicate node IDs or missing referenced nodes is delegated to the browser-side graph construction path.
-- `spring_layout` uses an `O(iterations * (n^2 + m))` force simulation, so it is not intended for very large graphs.
+- Force-directed algorithms use iterative simulation, often with `O(iterations * (n^2 + m))` style costs, so they are not intended for very large graphs.
 - Very large graphs still depend on browser memory and WebGL performance.
 
 ## Documentation

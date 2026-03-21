@@ -10,7 +10,7 @@ using JSON3
 using Random
 using UUIDs
 
-export EdgeSpec, NodeSpec, SigmaConfig, SigmaGraph, circular_layout, graph, grid_layout, random_layout, render, savehtml, spring_layout
+export EdgeSpec, NodeSpec, SigmaConfig, SigmaGraph, circular_layout, force_directed_layout, graph, grid_layout, random_layout, render, savehtml, spring_layout
 
 """
     NodeSpec(id; x=0.0, y=0.0, size=1.0, label=nothing, color=nothing, attributes=Dict())
@@ -230,12 +230,26 @@ function grid_layout(nodes, edges; kwargs...)
 end
 
 """
-    spring_layout(nodes, edges; iterations=100, seed=nothing, extent=1.0, gravity=0.05, cooling=0.9)
+    force_directed_layout(nodes, edges; algorithm=:fruchterman_reingold, kwargs...)
 
 Compute a lightweight force-directed layout from the graph structure.
+
+Supported algorithms:
+- `:fruchterman_reingold` (same core as `spring_layout`)
+- `:kamada_kawai`
+- `:forceatlas2`
+"""
+function force_directed_layout(nodes, edges; algorithm=:fruchterman_reingold, kwargs...)
+    _force_directed_layout(_normalize_nodes(nodes), _normalize_edges(edges); algorithm=algorithm, kwargs...)
+end
+
+"""
+    spring_layout(nodes, edges; iterations=100, seed=nothing, extent=1.0, gravity=0.05, cooling=0.9)
+
+Compatibility wrapper for Fruchterman-Reingold force-directed layout.
 """
 function spring_layout(nodes, edges; kwargs...)
-    _spring_layout(_normalize_nodes(nodes), _normalize_edges(edges); kwargs...)
+    force_directed_layout(nodes, edges; algorithm=:fruchterman_reingold, kwargs...)
 end
 
 """
@@ -351,6 +365,7 @@ function _resolve_layout(layout::Symbol)
     layout === :circular && return circular_layout
     layout === :grid && return grid_layout
     layout === :spring && return spring_layout
+    layout === :force_directed && return force_directed_layout
     error("Unsupported layout symbol: $(layout)")
 end
 
@@ -402,7 +417,26 @@ function _grid_layout(nodes::Vector{NodeSpec}; columns=nothing, spacing=1.0)
     positioned
 end
 
-function _spring_layout(nodes::Vector{NodeSpec}, edges::Vector{EdgeSpec}; iterations=100, seed=nothing, extent=1.0, gravity=0.05, cooling=0.9)
+function _force_directed_layout(nodes::Vector{NodeSpec}, edges::Vector{EdgeSpec}; algorithm=:fruchterman_reingold, kwargs...)
+    selected = _force_directed_algorithm(algorithm)
+    selected === :fruchterman_reingold && return _fruchterman_reingold_layout(nodes, edges; kwargs...)
+    selected === :kamada_kawai && return _kamada_kawai_layout(nodes, edges; kwargs...)
+    selected === :forceatlas2 && return _forceatlas2_layout(nodes, edges; kwargs...)
+    error("Unsupported force-directed algorithm: $(algorithm)")
+end
+
+function _force_directed_algorithm(algorithm::Symbol)
+    algorithm === :fruchterman_reingold && return :fruchterman_reingold
+    algorithm === :spring && return :fruchterman_reingold
+    algorithm === :kamada_kawai && return :kamada_kawai
+    algorithm === :forceatlas2 && return :forceatlas2
+    algorithm === :force_atlas2 && return :forceatlas2
+    error("Unsupported force-directed algorithm: $(algorithm)")
+end
+
+_force_directed_algorithm(algorithm::AbstractString) = _force_directed_algorithm(Symbol(lowercase(strip(algorithm))))
+
+function _fruchterman_reingold_layout(nodes::Vector{NodeSpec}, edges::Vector{EdgeSpec}; iterations=100, seed=nothing, extent=1.0, gravity=0.05, cooling=0.9)
     count = length(nodes)
     count == 0 && return NodeSpec[]
     count == 1 && return [_with_position(only(nodes), 0.0, 0.0)]
@@ -464,6 +498,154 @@ function _spring_layout(nodes::Vector{NodeSpec}, edges::Vector{EdgeSpec}; iterat
     [_with_position(node, xs[index], ys[index]) for (index, node) in pairs(nodes)]
 end
 
+function _kamada_kawai_layout(
+    nodes::Vector{NodeSpec},
+    edges::Vector{EdgeSpec};
+    iterations=150,
+    seed=nothing,
+    extent=1.0,
+    stiffness=1.0,
+    learning_rate=0.08,
+    gravity=0.01,
+    repulsion=0.01,
+    max_step=0.25,
+)
+    count = length(nodes)
+    count == 0 && return NodeSpec[]
+    count == 1 && return [_with_position(only(nodes), 0.0, 0.0)]
+
+    xs, ys = _initial_positions(nodes; seed=seed, extent=extent)
+    distances = _all_pairs_shortest_paths(nodes, edges)
+    finite_distances = [distances[i, j] for i in 1:count for j in 1:count if i != j && isfinite(distances[i, j])]
+    diameter = isempty(finite_distances) ? 1.0 : max(maximum(finite_distances), 1.0)
+    target_scale = (2 * extent) / diameter
+
+    ideal = Matrix{Float64}(undef, count, count)
+    spring = Matrix{Float64}(undef, count, count)
+    for i in 1:count
+        for j in 1:count
+            if i == j
+                ideal[i, j] = 0.0
+                spring[i, j] = 0.0
+                continue
+            end
+            d = distances[i, j]
+            if !isfinite(d)
+                d = diameter
+            end
+            d = max(d, 1.0e-9)
+            ideal[i, j] = target_scale * d
+            spring[i, j] = stiffness / (d * d)
+        end
+    end
+
+    for _ in 1:max(1, Int(iterations))
+        for i in 1:count
+            fx = 0.0
+            fy = 0.0
+            xi = xs[i]
+            yi = ys[i]
+            for j in 1:count
+                i == j && continue
+                dx = xi - xs[j]
+                dy = yi - ys[j]
+                distance = max(sqrt(dx * dx + dy * dy), 1.0e-9)
+                spring_force = spring[i, j] * (1.0 - ideal[i, j] / distance)
+                fx += spring_force * dx
+                fy += spring_force * dy
+                repel = repulsion / (distance * distance)
+                fx += dx * repel
+                fy += dy * repel
+            end
+            fx += gravity * xi
+            fy += gravity * yi
+            step = min(max_step, learning_rate * sqrt(fx * fx + fy * fy))
+            if step > 0.0
+                invnorm = 1.0 / max(sqrt(fx * fx + fy * fy), 1.0e-9)
+                xs[i] -= fx * invnorm * step
+                ys[i] -= fy * invnorm * step
+            end
+        end
+    end
+
+    xs, ys = _rescale_positions(xs, ys; extent=extent)
+    [_with_position(node, xs[index], ys[index]) for (index, node) in pairs(nodes)]
+end
+
+function _forceatlas2_layout(
+    nodes::Vector{NodeSpec},
+    edges::Vector{EdgeSpec};
+    iterations=200,
+    seed=nothing,
+    extent=1.0,
+    scaling=1.0,
+    gravity=0.05,
+    damping=0.85,
+    linlog=false,
+)
+    count = length(nodes)
+    count == 0 && return NodeSpec[]
+    count == 1 && return [_with_position(only(nodes), 0.0, 0.0)]
+
+    xs, ys = _initial_positions(nodes; seed=seed, extent=extent)
+    indexed_edges = _edge_indices(nodes, edges)
+    degree = zeros(Float64, count)
+    for (source, target) in indexed_edges
+        degree[source] += 1.0
+        degree[target] += 1.0
+    end
+
+    velocity_x = zeros(Float64, count)
+    velocity_y = zeros(Float64, count)
+    force_x = zeros(Float64, count)
+    force_y = zeros(Float64, count)
+
+    for _ in 1:max(1, Int(iterations))
+        fill!(force_x, 0.0)
+        fill!(force_y, 0.0)
+
+        for i in 1:(count - 1)
+            for j in (i + 1):count
+                dx = xs[i] - xs[j]
+                dy = ys[i] - ys[j]
+                distance = max(sqrt(dx * dx + dy * dy), 1.0e-9)
+                force = scaling * (degree[i] + 1.0) * (degree[j] + 1.0) / distance
+                fx = dx / distance * force
+                fy = dy / distance * force
+                force_x[i] += fx
+                force_y[i] += fy
+                force_x[j] -= fx
+                force_y[j] -= fy
+            end
+        end
+
+        for (source, target) in indexed_edges
+            dx = xs[source] - xs[target]
+            dy = ys[source] - ys[target]
+            distance = max(sqrt(dx * dx + dy * dy), 1.0e-9)
+            force = linlog ? log1p(distance) : distance
+            fx = dx / distance * force
+            fy = dy / distance * force
+            force_x[source] -= fx
+            force_y[source] -= fy
+            force_x[target] += fx
+            force_y[target] += fy
+        end
+
+        for i in 1:count
+            force_x[i] -= gravity * (degree[i] + 1.0) * xs[i]
+            force_y[i] -= gravity * (degree[i] + 1.0) * ys[i]
+            velocity_x[i] = damping * velocity_x[i] + (1.0 - damping) * force_x[i]
+            velocity_y[i] = damping * velocity_y[i] + (1.0 - damping) * force_y[i]
+            xs[i] += velocity_x[i]
+            ys[i] += velocity_y[i]
+        end
+    end
+
+    xs, ys = _rescale_positions(xs, ys; extent=extent)
+    [_with_position(node, xs[index], ys[index]) for (index, node) in pairs(nodes)]
+end
+
 function _layout_rng(seed)
     isnothing(seed) ? Random.default_rng() : MersenneTwister(seed)
 end
@@ -503,6 +685,32 @@ function _edge_indices(nodes::Vector{NodeSpec}, edges::Vector{EdgeSpec})
         push!(indexed, (source, target))
     end
     indexed
+end
+
+function _all_pairs_shortest_paths(nodes::Vector{NodeSpec}, edges::Vector{EdgeSpec})
+    count = length(nodes)
+    distances = fill(Inf, count, count)
+    for i in 1:count
+        distances[i, i] = 0.0
+    end
+
+    for (source, target) in _edge_indices(nodes, edges)
+        distances[source, target] = 1.0
+        distances[target, source] = 1.0
+    end
+
+    for k in 1:count
+        for i in 1:count
+            dik = distances[i, k]
+            !isfinite(dik) && continue
+            for j in 1:count
+                candidate = dik + distances[k, j]
+                candidate < distances[i, j] && (distances[i, j] = candidate)
+            end
+        end
+    end
+
+    distances
 end
 
 function _rescale_positions(xs::Vector{Float64}, ys::Vector{Float64}; extent=1.0)

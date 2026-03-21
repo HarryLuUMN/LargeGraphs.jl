@@ -10,6 +10,7 @@ random_layout
 circular_layout
 grid_layout
 spring_layout
+force_directed_layout
 graph
 render
 savehtml
@@ -74,7 +75,7 @@ Normalizes supported node and edge inputs into a `SigmaGraph`.
 
 When `layout` is provided, the layout is applied before the graph is wrapped in
 `SigmaGraph`. Built-in layouts may be selected with `:random`, `:circular`,
-`:grid`, or `:spring`.
+`:grid`, `:spring`, or `:force_directed`.
 
 ### `render`
 
@@ -122,7 +123,20 @@ spring_layout(nodes, edges; iterations=100, seed=nothing, extent=1.0, gravity=0.
 ```
 
 Returns positioned `NodeSpec` values from a lightweight force-directed layout.
-This is the only built-in layout that uses edge structure.
+This is a compatibility wrapper for Fruchterman-Reingold.
+
+### `force_directed_layout`
+
+```julia
+force_directed_layout(nodes, edges; algorithm=:fruchterman_reingold, kwargs...)
+```
+
+Returns positioned `NodeSpec` values from a force-directed algorithm family.
+Supported values for `algorithm`:
+
+- `:fruchterman_reingold`
+- `:kamada_kawai`
+- `:forceatlas2`
 
 ### `savehtml`
 

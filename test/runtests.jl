@@ -52,9 +52,40 @@ using LargeGraphsJL
     @test all(-1.5 <= node.y <= 1.5 for node in spring_nodes)
     @test length(Set((round(node.x, digits=6), round(node.y, digits=6)) for node in spring_nodes)) == 4
 
+    fr_nodes = force_directed_layout(layout_nodes, edges; algorithm=:fruchterman_reingold, iterations=40, seed=5, extent=1.5)
+    @test [node.id for node in fr_nodes] == ["a", "b", "c", "d"]
+    @test all(-1.5 <= node.x <= 1.5 for node in fr_nodes)
+    @test all(-1.5 <= node.y <= 1.5 for node in fr_nodes)
+    @test length(Set((round(node.x, digits=6), round(node.y, digits=6)) for node in fr_nodes)) == 4
+
+    kk_nodes = force_directed_layout(layout_nodes, edges; algorithm=:kamada_kawai, iterations=80, seed=5, extent=1.5)
+    @test [node.id for node in kk_nodes] == ["a", "b", "c", "d"]
+    @test all(-1.5 <= node.x <= 1.5 for node in kk_nodes)
+    @test all(-1.5 <= node.y <= 1.5 for node in kk_nodes)
+    @test length(Set((round(node.x, digits=6), round(node.y, digits=6)) for node in kk_nodes)) == 4
+
+    fa2_nodes = force_directed_layout(layout_nodes, edges; algorithm=:forceatlas2, iterations=80, seed=5, extent=1.5)
+    @test [node.id for node in fa2_nodes] == ["a", "b", "c", "d"]
+    @test all(-1.5 <= node.x <= 1.5 for node in fa2_nodes)
+    @test all(-1.5 <= node.y <= 1.5 for node in fa2_nodes)
+    @test length(Set((round(node.x, digits=6), round(node.y, digits=6)) for node in fa2_nodes)) == 4
+
     circular_viz = render(layout_nodes, edges; layout=:circular)
     @test circular_viz isa SigmaGraph
     @test all(isapprox(sqrt(node.x^2 + node.y^2), 1.0; atol=1.0e-8) for node in circular_viz.nodes)
+
+    force_viz = render(
+        layout_nodes,
+        edges;
+        layout=:force_directed,
+        algorithm=:kamada_kawai,
+        iterations=60,
+        seed=13,
+        extent=1.2,
+    )
+    @test force_viz isa SigmaGraph
+    @test all(-1.2 <= node.x <= 1.2 for node in force_viz.nodes)
+    @test all(-1.2 <= node.y <= 1.2 for node in force_viz.nodes)
 
     custom_viz = render(layout_nodes, edges; layout=(nodes, edges; shift=0.0) -> [
         NodeSpec(node.id; x=index + shift, y=-index, size=node.size, label=node.label, color=node.color, attributes=node.attributes)
@@ -62,6 +93,8 @@ using LargeGraphsJL
     ], shift=3.0)
     @test [node.x for node in custom_viz.nodes] == [4.0, 5.0, 6.0, 7.0]
     @test [node.y for node in custom_viz.nodes] == [-1.0, -2.0, -3.0, -4.0]
+
+    @test_throws "Unsupported force-directed algorithm" force_directed_layout(layout_nodes, edges; algorithm=:unknown)
 
     html = sprint(show, MIME"text/html"(), viz)
     @test occursin("large-graphs-jl-root", html)

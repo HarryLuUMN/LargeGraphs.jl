@@ -23,7 +23,8 @@ Try one of the built-in layouts first:
 - `layout=:random` for a quick spread
 - `layout=:circular` for small ordered graphs
 - `layout=:grid` for regular overviews
-- `layout=:spring` for structure-aware layouts on smaller graphs
+- `layout=:spring` for Fruchterman-Reingold structure-aware layouts
+- `layout=:force_directed` with `algorithm=:kamada_kawai` or `:forceatlas2` for alternative structure-aware layouts
 
 If the result is still poor, provide explicit coordinates or a custom layout
 callable before rendering.
@@ -32,5 +33,5 @@ callable before rendering.
 
 Browser memory and GPU performance remain the main limits. Reducing labels and
 keeping node sizes modest usually helps more than increasing canvas size.
-`spring_layout` also has a quadratic repulsion step, so it scales much worse
-than the other built-in layouts.
+Force-directed algorithms also have a quadratic repulsion step, so they scale
+much worse than `:random`, `:circular`, or `:grid`.

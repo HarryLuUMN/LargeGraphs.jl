@@ -22,7 +22,7 @@ using LargeGraphsJL
 Any `SigmaGraph` value renders as HTML in the notebook output area:
 
 ```julia
-viz = render(nodes, edges; layout=:spring, iterations=80, seed=7, height="600px", hide_edges_on_move=true)
+viz = render(nodes, edges; layout=:force_directed, algorithm=:fruchterman_reingold, iterations=120, seed=7, height="600px", hide_edges_on_move=true)
 display(viz)
 ```
 
@@ -45,5 +45,5 @@ viz = render(positioned_nodes, edges; height="600px")
 
 - Keep labels sparse for large graphs.
 - Use `hide_edges_on_move=true` when panning feels sluggish.
-- Use `:random`, `:circular`, or `:grid` for large graphs; `:spring` is more expensive.
+- Use `:random`, `:circular`, or `:grid` for large graphs; force-directed layouts (`:spring`, `:force_directed`) are more expensive.
 - Save a standalone HTML copy when you need to share results with someone outside Julia.
