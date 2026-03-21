@@ -50,6 +50,165 @@
     }
   }
 
+  function ensureControls(root) {
+    if (!root) {
+      return null;
+    }
+
+    if (root.__largeGraphsJlControls) {
+      return root.__largeGraphsJlControls;
+    }
+
+    root.style.position = "relative";
+
+    const controls = document.createElement("div");
+    controls.style.cssText = "position:absolute;top:16px;right:16px;z-index:4;display:flex;align-items:center;gap:10px;pointer-events:none;";
+
+    const fitButton = document.createElement("button");
+    fitButton.type = "button";
+    fitButton.textContent = "Fit View";
+    fitButton.style.cssText = "pointer-events:auto;padding:10px 14px;border:1px solid rgba(148,163,184,0.28);border-radius:999px;background:rgba(255,255,255,0.82);backdrop-filter:blur(18px);box-shadow:0 14px 32px rgba(15,23,42,0.12);font:600 13px/1 ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;color:#0f172a;cursor:pointer;transition:transform 140ms ease, box-shadow 140ms ease, background 140ms ease;";
+    fitButton.addEventListener("mouseenter", function () {
+      if (!fitButton.disabled) {
+        fitButton.style.transform = "translateY(-1px)";
+        fitButton.style.boxShadow = "0 18px 36px rgba(15,23,42,0.16)";
+        fitButton.style.background = "rgba(255,255,255,0.92)";
+      }
+    });
+    fitButton.addEventListener("mouseleave", function () {
+      fitButton.style.transform = "translateY(0)";
+      fitButton.style.boxShadow = fitButton.disabled ? "none" : "0 14px 32px rgba(15,23,42,0.12)";
+      fitButton.style.background = fitButton.disabled ? "rgba(255,255,255,0.45)" : "rgba(255,255,255,0.82)";
+    });
+    fitButton.addEventListener("click", function () {
+      void fitView(root);
+    });
+
+    controls.appendChild(fitButton);
+    root.appendChild(controls);
+
+    root.__largeGraphsJlControls = controls;
+    root.__largeGraphsJlFitButton = fitButton;
+    updateControls(root);
+    return controls;
+  }
+
+  function updateControls(root) {
+    const controls = root && root.__largeGraphsJlControls;
+    const fitButton = root && root.__largeGraphsJlFitButton;
+    if (!controls || !fitButton) {
+      return;
+    }
+
+    const sigma = root.__largeGraphsJlSigma;
+    const graph = sigma && sigma.getGraph ? sigma.getGraph() : null;
+    const enabled = Boolean(sigma && graph && graph.order > 0 && !root.__largeGraphsJlPaused);
+    controls.style.display = root.__largeGraphsJlPaused ? "none" : "flex";
+    fitButton.disabled = !enabled;
+    fitButton.style.cursor = enabled ? "pointer" : "default";
+    fitButton.style.opacity = enabled ? "1" : "0.7";
+    fitButton.style.boxShadow = enabled ? "0 14px 32px rgba(15,23,42,0.12)" : "none";
+    fitButton.style.background = enabled ? "rgba(255,255,255,0.82)" : "rgba(255,255,255,0.45)";
+    fitButton.style.color = enabled ? "#0f172a" : "#64748b";
+  }
+
+  function projectedBoundsForCamera(sigma, bbox, cameraState) {
+    const corners = [
+      sigma.graphToViewport({ x: bbox.x[0], y: bbox.y[0] }, { cameraState }),
+      sigma.graphToViewport({ x: bbox.x[0], y: bbox.y[1] }, { cameraState }),
+      sigma.graphToViewport({ x: bbox.x[1], y: bbox.y[0] }, { cameraState }),
+      sigma.graphToViewport({ x: bbox.x[1], y: bbox.y[1] }, { cameraState }),
+    ];
+
+    let minX = Infinity;
+    let maxX = -Infinity;
+    let minY = Infinity;
+    let maxY = -Infinity;
+
+    for (const point of corners) {
+      minX = Math.min(minX, point.x);
+      maxX = Math.max(maxX, point.x);
+      minY = Math.min(minY, point.y);
+      maxY = Math.max(maxY, point.y);
+    }
+
+    return { minX, maxX, minY, maxY };
+  }
+
+  async function fitView(root) {
+    const sigma = root && root.__largeGraphsJlSigma;
+    if (!sigma) {
+      return null;
+    }
+
+    const graph = sigma.getGraph();
+    if (!graph || graph.order === 0) {
+      return null;
+    }
+
+    sigma.resize();
+
+    const bbox = sigma.getBBox();
+    if (!bbox || !Array.isArray(bbox.x) || !Array.isArray(bbox.y)) {
+      return null;
+    }
+
+    const width = Math.max(1, sigma.getDimensions().width || 0);
+    const height = Math.max(1, sigma.getDimensions().height || 0);
+    const horizontalPadding = width * 0.14;
+    const verticalPadding = height * 0.16;
+    const targetWidth = Math.max(1, width - horizontalPadding * 2);
+    const targetHeight = Math.max(1, height - verticalPadding * 2);
+
+    const camera = sigma.getCamera();
+    const current = camera.getState();
+    const centerX = (bbox.x[0] + bbox.x[1]) / 2;
+    const centerY = (bbox.y[0] + bbox.y[1]) / 2;
+    const angle = current.angle || 0;
+    const low = camera.getBoundedRatio(0.0001);
+    const high = camera.getBoundedRatio(1.0e6);
+
+    if (!Number.isFinite(centerX) || !Number.isFinite(centerY) || !Number.isFinite(low) || !Number.isFinite(high)) {
+      return null;
+    }
+
+    const fitsAt = function (ratio) {
+      const bounds = projectedBoundsForCamera(sigma, bbox, { x: centerX, y: centerY, ratio, angle });
+      return bounds.maxX - bounds.minX <= targetWidth && bounds.maxY - bounds.minY <= targetHeight;
+    };
+
+    let targetRatio = high;
+    if (fitsAt(low)) {
+      targetRatio = low;
+    } else if (!fitsAt(high)) {
+      targetRatio = high;
+    } else {
+      let minRatio = low;
+      let maxRatio = high;
+      for (let index = 0; index < 24; index += 1) {
+        const mid = (minRatio + maxRatio) / 2;
+        if (fitsAt(mid)) {
+          targetRatio = mid;
+          maxRatio = mid;
+        } else {
+          minRatio = mid;
+        }
+      }
+    }
+
+    const boundedRatio = camera.getBoundedRatio(targetRatio);
+    if (Math.abs(current.x - centerX) < 1.0e-6 && Math.abs(current.y - centerY) < 1.0e-6 && Math.abs(current.ratio - boundedRatio) < 1.0e-6) {
+      return null;
+    }
+
+    await camera.animate(
+      { x: centerX, y: centerY, ratio: boundedRatio, angle },
+      { duration: 420 }
+    );
+    sigma.scheduleRender();
+    return null;
+  }
+
   function installCleanup(root) {
     if (!root || root.__largeGraphsJlCleanupObserver || !document.body || typeof MutationObserver === "undefined") {
       return;
@@ -228,6 +387,7 @@
       return;
     }
 
+    ensureControls(root);
     const preview = root.__largeGraphsJlPreview || createPreview(root, stage);
     stage.innerHTML = "";
     stage.style.position = "relative";
@@ -291,6 +451,7 @@
     cleanup(root);
     root.__largeGraphsJlPaused = true;
     showPausedPreview(root, message);
+    updateControls(root);
   }
 
   function enforceActiveLimit(currentRoot) {
@@ -327,12 +488,14 @@
       return null;
     }
 
+    ensureControls(root);
     root.__largeGraphsJlRenderToken = (root.__largeGraphsJlRenderToken || 0) + 1;
     const renderToken = root.__largeGraphsJlRenderToken;
     cleanup(root);
     installCleanup(root);
     root.__largeGraphsJlPaused = false;
     root.__largeGraphsJlPreview = null;
+    updateControls(root);
 
     stage.innerHTML = "";
     stage.style.position = "relative";
@@ -380,6 +543,7 @@
       installCleanup(root);
       rememberActiveRoot(root);
       enforceActiveLimit(root);
+      updateControls(root);
       return sigma;
     } catch (error) {
       status.textContent = "Sigma.js failed to load";
@@ -387,6 +551,7 @@
       details.textContent = String(error);
       details.style.cssText = "position:absolute;left:12px;right:12px;bottom:12px;max-height:40%;overflow:auto;margin:0;padding:12px;background:#fff;border:1px solid #d1d5db;font:12px monospace;color:#991b1b;";
       stage.appendChild(details);
+      updateControls(root);
       return null;
     }
   }
