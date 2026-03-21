@@ -11,6 +11,7 @@ of the form `(id, x, y, size=1.0, label=nothing)`. Accepted edge inputs include
 function graph(nodes, edges; id=string("sigma-", uuid4()), config=SigmaConfig(), layout=nothing, layout_kwargs...)
     normalized_nodes = _normalize_nodes(nodes)
     normalized_edges = _normalize_edges(edges)
+    _validate_graph_inputs(normalized_nodes, normalized_edges)
     SigmaGraph(
         string(id),
         _apply_layout(normalized_nodes, normalized_edges, layout; layout_kwargs...),

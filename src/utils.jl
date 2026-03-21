@@ -39,6 +39,27 @@ function _edge_indices(nodes::Vector{NodeSpec}, edges::Vector{EdgeSpec})
     indexed
 end
 
+function _validate_graph_inputs(nodes::Vector{NodeSpec}, edges::Vector{EdgeSpec})
+    seen = Set{String}()
+    duplicates = String[]
+    for node in nodes
+        if node.id in seen
+            push!(duplicates, node.id)
+        else
+            push!(seen, node.id)
+        end
+    end
+    isempty(duplicates) || error("Duplicate node ids are not supported: $(join(unique(duplicates), ", "))")
+
+    missing = String[]
+    for edge in edges
+        edge.source in seen || push!(missing, edge.source)
+        edge.target in seen || push!(missing, edge.target)
+    end
+    isempty(missing) || error("Edges reference node ids that are missing from the node list: $(join(unique(missing), ", "))")
+    nothing
+end
+
 function _all_pairs_shortest_paths(nodes::Vector{NodeSpec}, edges::Vector{EdgeSpec})
     count = length(nodes)
     distances = fill(Inf, count, count)

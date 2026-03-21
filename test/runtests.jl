@@ -151,6 +151,8 @@ using LargeGraphs
     @test_throws "Unsupported force-directed algorithm" force_directed_layout(layout_nodes, edges; algorithm=:unknown)
     @test_throws "Unsupported tree layout algorithm" tree_layout(tree_nodes, tree_edges; algorithm=:unknown)
     @test_throws "Unknown tree root" tree_layout(tree_nodes, tree_edges; root="missing")
+    @test_throws "Edges reference node ids that are missing from the node list" render([(id="1",)], [(source="1", target="2")])
+    @test_throws "Duplicate node ids are not supported" render([(id="1",), (id="1",)], [(source="1", target="1")])
 
     html = sprint(show, MIME"text/html"(), viz)
     @test occursin("large-graphs-jl-root", html)
