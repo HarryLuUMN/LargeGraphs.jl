@@ -8,6 +8,10 @@
   const defaultMaxActiveViews = 4;
   let loader;
   const activeRoots = [];
+  const buttonBaseStyle = "pointer-events:auto;display:grid;place-items:center;width:52px;height:52px;padding:0;border:1px solid rgba(148,163,184,0.28);border-radius:999px;background:rgba(255,255,255,0.82);backdrop-filter:blur(18px);box-shadow:0 14px 32px rgba(15,23,42,0.12);color:#0f172a;cursor:pointer;transition:transform 140ms ease, box-shadow 140ms ease, background 140ms ease, color 140ms ease;";
+  const fitIcon = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 4H4v4"/><path d="M16 4h4v4"/><path d="M20 16v4h-4"/><path d="M4 16v4h4"/><path d="M9 9 4 4"/><path d="m15 9 5-5"/><path d="m15 15 5 5"/><path d="m9 15-5 5"/></svg>';
+  const lockIcon = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 1 1 8 0v3"/></svg>';
+  const unlockIcon = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M16 11V8a4 4 0 0 0-7.2-2.4"/></svg>';
 
   function maxActiveViews() {
     const configured = Number(window.LargeGraphsMaxActiveViews);
@@ -66,8 +70,10 @@
 
     const fitButton = document.createElement("button");
     fitButton.type = "button";
-    fitButton.textContent = "Fit View";
-    fitButton.style.cssText = "pointer-events:auto;padding:10px 14px;border:1px solid rgba(148,163,184,0.28);border-radius:999px;background:rgba(255,255,255,0.82);backdrop-filter:blur(18px);box-shadow:0 14px 32px rgba(15,23,42,0.12);font:600 13px/1 ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;color:#0f172a;cursor:pointer;transition:transform 140ms ease, box-shadow 140ms ease, background 140ms ease;";
+    fitButton.innerHTML = fitIcon;
+    fitButton.setAttribute("aria-label", "Fit view");
+    fitButton.title = "Fit view";
+    fitButton.style.cssText = buttonBaseStyle;
     fitButton.addEventListener("mouseenter", function () {
       if (!fitButton.disabled) {
         fitButton.style.transform = "translateY(-1px)";
@@ -86,7 +92,10 @@
 
     const lockButton = document.createElement("button");
     lockButton.type = "button";
-    lockButton.style.cssText = "pointer-events:auto;padding:10px 14px;border:1px solid rgba(148,163,184,0.28);border-radius:999px;background:rgba(255,255,255,0.82);backdrop-filter:blur(18px);box-shadow:0 14px 32px rgba(15,23,42,0.12);font:600 13px/1 ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;color:#0f172a;cursor:pointer;transition:transform 140ms ease, box-shadow 140ms ease, background 140ms ease, color 140ms ease;";
+    lockButton.innerHTML = lockIcon;
+    lockButton.setAttribute("aria-label", "Lock camera");
+    lockButton.title = "Lock camera";
+    lockButton.style.cssText = buttonBaseStyle;
     lockButton.addEventListener("mouseenter", function () {
       if (!lockButton.disabled) {
         lockButton.style.transform = "translateY(-1px)";
@@ -134,7 +143,9 @@
     fitButton.style.color = enabled ? "#0f172a" : "#64748b";
 
     lockButton.disabled = !lockEnabled;
-    lockButton.textContent = locked ? "Unlock Camera" : "Lock Camera";
+    lockButton.innerHTML = locked ? unlockIcon : lockIcon;
+    lockButton.setAttribute("aria-label", locked ? "Unlock camera" : "Lock camera");
+    lockButton.title = locked ? "Unlock camera" : "Lock camera";
     lockButton.style.cursor = lockEnabled ? "pointer" : "default";
     lockButton.style.opacity = lockEnabled ? "1" : "0.7";
     lockButton.style.boxShadow = lockEnabled ? "0 14px 32px rgba(15,23,42,0.12)" : "none";
