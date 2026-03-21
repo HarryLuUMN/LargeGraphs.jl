@@ -112,29 +112,6 @@
     fitButton.style.color = enabled ? "#0f172a" : "#64748b";
   }
 
-  function projectedBoundsForCamera(sigma, bbox, cameraState) {
-    const corners = [
-      sigma.graphToViewport({ x: bbox.x[0], y: bbox.y[0] }, { cameraState }),
-      sigma.graphToViewport({ x: bbox.x[0], y: bbox.y[1] }, { cameraState }),
-      sigma.graphToViewport({ x: bbox.x[1], y: bbox.y[0] }, { cameraState }),
-      sigma.graphToViewport({ x: bbox.x[1], y: bbox.y[1] }, { cameraState }),
-    ];
-
-    let minX = Infinity;
-    let maxX = -Infinity;
-    let minY = Infinity;
-    let maxY = -Infinity;
-
-    for (const point of corners) {
-      minX = Math.min(minX, point.x);
-      maxX = Math.max(maxX, point.x);
-      minY = Math.min(minY, point.y);
-      maxY = Math.max(maxY, point.y);
-    }
-
-    return { minX, maxX, minY, maxY };
-  }
-
   async function fitView(root) {
     const sigma = root && root.__largeGraphsJlSigma;
     if (!sigma) {
@@ -153,58 +130,30 @@
       return null;
     }
 
-    const width = Math.max(1, sigma.getDimensions().width || 0);
-    const height = Math.max(1, sigma.getDimensions().height || 0);
-    const horizontalPadding = width * 0.14;
-    const verticalPadding = height * 0.16;
-    const targetWidth = Math.max(1, width - horizontalPadding * 2);
-    const targetHeight = Math.max(1, height - verticalPadding * 2);
+    const minX = bbox.x[0];
+    const maxX = bbox.x[1];
+    const minY = bbox.y[0];
+    const maxY = bbox.y[1];
+    const spanX = Math.max(Math.abs(maxX - minX), 1.0e-6);
+    const spanY = Math.max(Math.abs(maxY - minY), 1.0e-6);
+    const padRatio = 0.16;
+    const padX = spanX * padRatio;
+    const padY = spanY * padRatio;
+    const expanded = {
+      x: [minX - padX, maxX + padX],
+      y: [minY - padY, maxY + padY],
+    };
+
+    sigma.setCustomBBox(expanded);
+    sigma.scheduleRefresh();
 
     const camera = sigma.getCamera();
     const current = camera.getState();
-    const centerX = (bbox.x[0] + bbox.x[1]) / 2;
-    const centerY = (bbox.y[0] + bbox.y[1]) / 2;
-    const angle = current.angle || 0;
-    const low = camera.getBoundedRatio(0.0001);
-    const high = camera.getBoundedRatio(1.0e6);
-
-    if (!Number.isFinite(centerX) || !Number.isFinite(centerY) || !Number.isFinite(low) || !Number.isFinite(high)) {
+    if (Math.abs(current.x - 0.5) < 1.0e-6 && Math.abs(current.y - 0.5) < 1.0e-6 && Math.abs(current.ratio - 1) < 1.0e-6) {
       return null;
     }
 
-    const fitsAt = function (ratio) {
-      const bounds = projectedBoundsForCamera(sigma, bbox, { x: centerX, y: centerY, ratio, angle });
-      return bounds.maxX - bounds.minX <= targetWidth && bounds.maxY - bounds.minY <= targetHeight;
-    };
-
-    let targetRatio = high;
-    if (fitsAt(low)) {
-      targetRatio = low;
-    } else if (!fitsAt(high)) {
-      targetRatio = high;
-    } else {
-      let minRatio = low;
-      let maxRatio = high;
-      for (let index = 0; index < 24; index += 1) {
-        const mid = (minRatio + maxRatio) / 2;
-        if (fitsAt(mid)) {
-          targetRatio = mid;
-          maxRatio = mid;
-        } else {
-          minRatio = mid;
-        }
-      }
-    }
-
-    const boundedRatio = camera.getBoundedRatio(targetRatio);
-    if (Math.abs(current.x - centerX) < 1.0e-6 && Math.abs(current.y - centerY) < 1.0e-6 && Math.abs(current.ratio - boundedRatio) < 1.0e-6) {
-      return null;
-    }
-
-    await camera.animate(
-      { x: centerX, y: centerY, ratio: boundedRatio, angle },
-      { duration: 420 }
-    );
+    await camera.animate({ x: 0.5, y: 0.5, ratio: 1, angle: current.angle || 0 }, { duration: 420 });
     sigma.scheduleRender();
     return null;
   }
