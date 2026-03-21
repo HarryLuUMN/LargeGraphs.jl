@@ -14,6 +14,6 @@ makedocs(
 )
 
 deploydocs(
-    repo = "github.com/HarryLuUMN/large-graphs-jl.git",
+    repo = "github.com/HarryLuUMN/LargeGraphs.jl.git",
     devbranch = "master",
 )

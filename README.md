@@ -27,7 +27,7 @@ Pkg.instantiate()
 
 ```julia
 using Pkg
-Pkg.add(url="git@github.com:HarryLuUMN/large-graphs-jl.git")
+Pkg.add(url="git@github.com:HarryLuUMN/LargeGraphs.jl.git")
 ```
 
 ### Notebook prerequisite
