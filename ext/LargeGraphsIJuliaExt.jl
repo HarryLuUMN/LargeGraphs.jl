@@ -9,6 +9,7 @@ const TARGET_REGISTERED = Ref(false)
 
 function LargeGraphs._interaction_bridge(state::LargeGraphs.InteractionState)
     _register_target!()
+    LargeGraphs._register_interaction_state!(state)
     STATE_REGISTRY[state.id] = state
     return Dict(
         "targetName" => INTERACTION_TARGET,

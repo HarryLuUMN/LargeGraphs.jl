@@ -30,6 +30,8 @@ end
 
 InteractionState(; id=string("interaction-", uuid4())) = InteractionState(string(id), nothing, nothing, String[], GraphEvent[], false)
 
+const INTERACTION_STATE_REGISTRY = Dict{String, InteractionState}()
+
 """
     selected_node(state)
 
@@ -68,6 +70,17 @@ function clear!(state::InteractionState)
     state
 end
 
+function _register_interaction_state!(state::InteractionState)
+    INTERACTION_STATE_REGISTRY[state.id] = state
+    state
+end
+
+function _receive_interaction_event(session_id, data)
+    state = get(INTERACTION_STATE_REGISTRY, string(session_id), nothing)
+    isnothing(state) && return nothing
+    _apply_interaction_event!(state, data)
+end
+
 function Base.show(io::IO, ::MIME"text/plain", state::InteractionState)
     print(
         io,
@@ -86,6 +99,8 @@ function _interaction_payload(state; enable_selection=true, enable_tooltips=true
         "highlightNeighbors" => Bool(highlight_neighbors),
     )
     if !isnothing(state)
+        _register_interaction_state!(state)
+        payload["sessionId"] = state.id
         bridge = _interaction_bridge(state)
         !isnothing(bridge) && (payload["bridge"] = bridge)
     end

@@ -683,9 +683,12 @@
     if (comm && typeof comm.send === "function") {
       try {
         comm.send(detail);
+        return;
       } catch (_error) {
       }
     }
+
+    sendKernelInteractionEvent(root, detail);
   }
 
   function interactionDetail(root, eventType, nodeId) {
@@ -694,7 +697,7 @@
       nodeId: nodeId ? String(nodeId) : null,
       neighborIds: nodeId ? nodeNeighbors(root, nodeId) : [],
       rootId: root.id,
-      sessionId: interactionConfig(root).bridge?.sessionId || null,
+      sessionId: interactionConfig(root).sessionId || interactionConfig(root).bridge?.sessionId || null,
       timestamp: Date.now() / 1000,
     };
   }
@@ -711,6 +714,72 @@
     }
 
     return null;
+  }
+
+  function findKernelConnection() {
+    const classic = window.Jupyter && window.Jupyter.notebook && window.Jupyter.notebook.kernel;
+    if (classic) {
+      return classic;
+    }
+
+    const app = window.jupyterapp || window.jupyterlab || window.galata;
+    const currentWidget = app && app.shell && app.shell.currentWidget;
+    const sessionContext = currentWidget && currentWidget.context && currentWidget.context.sessionContext
+      ? currentWidget.context.sessionContext
+      : currentWidget && currentWidget.sessionContext
+        ? currentWidget.sessionContext
+        : null;
+    const session = sessionContext && sessionContext.session;
+    if (session && session.kernel) {
+      return session.kernel;
+    }
+
+    return null;
+  }
+
+  function encodeJuliaString(value) {
+    return JSON.stringify(String(value));
+  }
+
+  function executeJulia(kernel, code) {
+    if (!kernel) {
+      return false;
+    }
+
+    try {
+      if (typeof kernel.execute === "function") {
+        kernel.execute(code, { silent: false, store_history: false });
+        return true;
+      }
+      if (typeof kernel.requestExecute === "function") {
+        kernel.requestExecute({ code, silent: true, store_history: false });
+        return true;
+      }
+    } catch (_error) {
+    }
+
+    return false;
+  }
+
+  function sendKernelInteractionEvent(root, detail) {
+    const sessionId = detail && detail.sessionId;
+    if (!sessionId) {
+      return;
+    }
+
+    const kernel = findKernelConnection();
+    if (!kernel) {
+      return;
+    }
+
+    const payload = JSON.stringify({
+      eventType: detail.eventType,
+      nodeId: detail.nodeId,
+      neighborIds: detail.neighborIds,
+      timestamp: detail.timestamp,
+    });
+    const code = `try\n    LargeGraphs._receive_interaction_event(${encodeJuliaString(sessionId)}, LargeGraphs.JSON3.read(${encodeJuliaString(payload)}))\ncatch\nend`;
+    executeJulia(kernel, code);
   }
 
   function ensureInteractionBridge(root) {
@@ -735,6 +804,7 @@
         comm.send(interactionDetail(root, "connected", null));
       }
     } catch (_error) {
+      root.__largeGraphsJlComm = null;
     }
   }
 
