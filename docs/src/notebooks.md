@@ -38,7 +38,8 @@ viz = render(positioned_nodes, edges; height="600px")
 
 ## Demos in This Repository
 
-- `examples/demo_notebook.ipynb` shows a notebook workflow that builds a large random graph.
+- `examples/demo_notebook.ipynb` shows notebook rendering workflows and large-graph viewing.
+- `examples/demo_layout_functions.ipynb` shows direct layout functions returning positioned nodes.
 - `examples/demo_large_graph.jl` generates the same style of output from a script and writes HTML to disk.
 
 ## Practical Advice

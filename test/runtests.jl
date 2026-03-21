@@ -80,6 +80,11 @@ using LargeGraphs
     @test circular_viz isa SigmaGraph
     @test all(isapprox(sqrt(node.x^2 + node.y^2), 1.0; atol=1.0e-8) for node in circular_viz.nodes)
 
+    spectral_viz = render(layout_nodes, edges; layout=:spectral, extent=1.2, seed=13)
+    @test spectral_viz isa SigmaGraph
+    @test all(-1.2 <= node.x <= 1.2 for node in spectral_viz.nodes)
+    @test all(-1.2 <= node.y <= 1.2 for node in spectral_viz.nodes)
+
     force_viz = render(
         layout_nodes,
         edges;

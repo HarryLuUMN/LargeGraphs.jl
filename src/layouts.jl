@@ -82,6 +82,7 @@ function _resolve_layout(layout::Symbol)
     layout === :random && return random_layout
     layout === :circular && return circular_layout
     layout === :grid && return grid_layout
+    layout === :spectral && return spectral_layout
     layout === :spring && return spring_layout
     layout === :force_directed && return force_directed_layout
     error("Unsupported layout symbol: $(layout)")
