@@ -99,7 +99,10 @@ using LargeGraphsJL
     html = sprint(show, MIME"text/html"(), viz)
     @test occursin("large-graphs-jl-root", html)
     @test occursin("window.LargeGraphsJL.render", html)
+    @test occursin("void window.LargeGraphsJL.render", html)
     @test occursin("Loading Sigma.js", read(joinpath(pkgdir(LargeGraphsJL), "assets", "sigma-viewer.js"), String))
+    @test occursin("root.__largeGraphsJlRenderToken", read(joinpath(pkgdir(LargeGraphsJL), "assets", "sigma-viewer.js"), String))
+    @test occursin("root.__largeGraphsJlSigma.kill()", read(joinpath(pkgdir(LargeGraphsJL), "assets", "sigma-viewer.js"), String))
 
     tempdir = mktempdir()
     output = joinpath(tempdir, "graph.html")
