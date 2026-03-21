@@ -84,11 +84,30 @@
       void fitView(root);
     });
 
+    const lockButton = document.createElement("button");
+    lockButton.type = "button";
+    lockButton.style.cssText = "pointer-events:auto;padding:10px 14px;border:1px solid rgba(148,163,184,0.28);border-radius:999px;background:rgba(255,255,255,0.82);backdrop-filter:blur(18px);box-shadow:0 14px 32px rgba(15,23,42,0.12);font:600 13px/1 ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;color:#0f172a;cursor:pointer;transition:transform 140ms ease, box-shadow 140ms ease, background 140ms ease, color 140ms ease;";
+    lockButton.addEventListener("mouseenter", function () {
+      if (!lockButton.disabled) {
+        lockButton.style.transform = "translateY(-1px)";
+        lockButton.style.boxShadow = "0 18px 36px rgba(15,23,42,0.16)";
+      }
+    });
+    lockButton.addEventListener("mouseleave", function () {
+      lockButton.style.transform = "translateY(0)";
+      lockButton.style.boxShadow = lockButton.disabled ? "none" : "0 14px 32px rgba(15,23,42,0.12)";
+    });
+    lockButton.addEventListener("click", function () {
+      toggleCameraLock(root);
+    });
+
     controls.appendChild(fitButton);
+    controls.appendChild(lockButton);
     root.appendChild(controls);
 
     root.__largeGraphsJlControls = controls;
     root.__largeGraphsJlFitButton = fitButton;
+    root.__largeGraphsJlLockButton = lockButton;
     updateControls(root);
     return controls;
   }
@@ -96,13 +115,16 @@
   function updateControls(root) {
     const controls = root && root.__largeGraphsJlControls;
     const fitButton = root && root.__largeGraphsJlFitButton;
-    if (!controls || !fitButton) {
+    const lockButton = root && root.__largeGraphsJlLockButton;
+    if (!controls || !fitButton || !lockButton) {
       return;
     }
 
     const sigma = root.__largeGraphsJlSigma;
     const graph = sigma && sigma.getGraph ? sigma.getGraph() : null;
     const enabled = Boolean(sigma && graph && graph.order > 0 && !root.__largeGraphsJlPaused);
+    const lockEnabled = Boolean(sigma && !root.__largeGraphsJlPaused);
+    const locked = Boolean(root.__largeGraphsJlCameraLocked);
     controls.style.display = root.__largeGraphsJlPaused ? "none" : "flex";
     fitButton.disabled = !enabled;
     fitButton.style.cursor = enabled ? "pointer" : "default";
@@ -110,6 +132,63 @@
     fitButton.style.boxShadow = enabled ? "0 14px 32px rgba(15,23,42,0.12)" : "none";
     fitButton.style.background = enabled ? "rgba(255,255,255,0.82)" : "rgba(255,255,255,0.45)";
     fitButton.style.color = enabled ? "#0f172a" : "#64748b";
+
+    lockButton.disabled = !lockEnabled;
+    lockButton.textContent = locked ? "Unlock Camera" : "Lock Camera";
+    lockButton.style.cursor = lockEnabled ? "pointer" : "default";
+    lockButton.style.opacity = lockEnabled ? "1" : "0.7";
+    lockButton.style.boxShadow = lockEnabled ? "0 14px 32px rgba(15,23,42,0.12)" : "none";
+    lockButton.style.background = locked ? "linear-gradient(135deg, #0f172a 0%, #334155 100%)" : lockEnabled ? "rgba(255,255,255,0.82)" : "rgba(255,255,255,0.45)";
+    lockButton.style.color = locked ? "#f8fafc" : lockEnabled ? "#0f172a" : "#64748b";
+  }
+
+  function ensureCameraLockLayer(root) {
+    if (!root) {
+      return null;
+    }
+
+    const stage = root.querySelector(".large-graphs-jl-stage");
+    if (!stage) {
+      return null;
+    }
+
+    let lockLayer = root.__largeGraphsJlCameraLockLayer;
+    if (!lockLayer || lockLayer.parentElement !== stage) {
+      lockLayer = document.createElement("div");
+      lockLayer.setAttribute("aria-hidden", "true");
+      lockLayer.style.cssText = "position:absolute;inset:0;z-index:3;display:none;pointer-events:auto;background:transparent;cursor:not-allowed;";
+      const stop = function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+      };
+      ["pointerdown", "pointermove", "pointerup", "wheel", "touchstart", "touchmove", "touchend", "dblclick"].forEach(function (eventName) {
+        lockLayer.addEventListener(eventName, stop, { passive: false });
+      });
+      stage.appendChild(lockLayer);
+      root.__largeGraphsJlCameraLockLayer = lockLayer;
+    }
+
+    return lockLayer;
+  }
+
+  function applyCameraLock(root) {
+    const lockLayer = ensureCameraLockLayer(root);
+    if (!lockLayer) {
+      return;
+    }
+
+    const locked = Boolean(root.__largeGraphsJlCameraLocked) && !root.__largeGraphsJlPaused;
+    lockLayer.style.display = locked ? "block" : "none";
+  }
+
+  function toggleCameraLock(root) {
+    if (!root || !root.__largeGraphsJlSigma || root.__largeGraphsJlPaused) {
+      return;
+    }
+
+    root.__largeGraphsJlCameraLocked = !root.__largeGraphsJlCameraLocked;
+    applyCameraLock(root);
+    updateControls(root);
   }
 
   async function fitView(root) {
@@ -492,6 +571,7 @@
       installCleanup(root);
       rememberActiveRoot(root);
       enforceActiveLimit(root);
+      applyCameraLock(root);
       updateControls(root);
       return sigma;
     } catch (error) {
@@ -500,6 +580,7 @@
       details.textContent = String(error);
       details.style.cssText = "position:absolute;left:12px;right:12px;bottom:12px;max-height:40%;overflow:auto;margin:0;padding:12px;background:#fff;border:1px solid #d1d5db;font:12px monospace;color:#991b1b;";
       stage.appendChild(details);
+      applyCameraLock(root);
       updateControls(root);
       return null;
     }
