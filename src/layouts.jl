@@ -50,6 +50,19 @@ function spectral_layout(nodes, edges; kwargs...)
 end
 
 """
+    tree_layout(nodes, edges; algorithm=:layered, root=nothing, level_gap=1.0, sibling_gap=1.0, extent=1.0)
+
+Compute a tree-oriented layout for rooted trees or forests.
+
+Supported algorithms:
+- `:layered`
+- `:radial`
+"""
+function tree_layout(nodes, edges; algorithm=:layered, kwargs...)
+    _tree_layout(_normalize_nodes(nodes), _normalize_edges(edges); algorithm=algorithm, kwargs...)
+end
+
+"""
     force_directed_layout(nodes, edges; algorithm=:fruchterman_reingold, kwargs...)
 
 Compute a lightweight force-directed layout from the graph structure.
@@ -83,6 +96,7 @@ function _resolve_layout(layout::Symbol)
     layout === :circular && return circular_layout
     layout === :grid && return grid_layout
     layout === :spectral && return spectral_layout
+    layout === :tree && return tree_layout
     layout === :spring && return spring_layout
     layout === :force_directed && return force_directed_layout
     error("Unsupported layout symbol: $(layout)")
@@ -164,6 +178,225 @@ function _spectral_layout(nodes::Vector{NodeSpec}, edges::Vector{EdgeSpec}; exte
 
     xs, ys = _rescale_positions(xs, ys; extent=extent)
     [_with_position(node, xs[index], ys[index]) for (index, node) in pairs(nodes)]
+end
+
+function _tree_layout(nodes::Vector{NodeSpec}, edges::Vector{EdgeSpec}; algorithm=:layered, kwargs...)
+    selected = _tree_layout_algorithm(algorithm)
+    selected === :layered && return _layered_tree_layout(nodes, edges; kwargs...)
+    selected === :radial && return _radial_tree_layout(nodes, edges; kwargs...)
+    error("Unsupported tree layout algorithm: $(algorithm)")
+end
+
+function _tree_layout_algorithm(algorithm::Symbol)
+    algorithm === :layered && return :layered
+    algorithm === :radial && return :radial
+    error("Unsupported tree layout algorithm: $(algorithm)")
+end
+
+_tree_layout_algorithm(algorithm::AbstractString) = _tree_layout_algorithm(Symbol(lowercase(strip(algorithm))))
+
+function _layered_tree_layout(
+    nodes::Vector{NodeSpec},
+    edges::Vector{EdgeSpec};
+    root=nothing,
+    level_gap=1.0,
+    sibling_gap=1.0,
+    extent=1.0,
+)
+    count = length(nodes)
+    count == 0 && return NodeSpec[]
+    count == 1 && return [_with_position(only(nodes), 0.0, 0.0)]
+
+    structure = _tree_structure(nodes, edges; root=root)
+    xs = zeros(Float64, count)
+    ys = zeros(Float64, count)
+    next_leaf_x = Ref(0.0)
+
+    for root_index in structure.root_indices
+        _assign_layered_tree_positions!(xs, ys, structure.children, structure.depths, root_index, next_leaf_x; level_gap=level_gap, sibling_gap=sibling_gap)
+        next_leaf_x[] += sibling_gap
+    end
+
+    scaled_xs, scaled_ys = _rescale_positions(xs, ys; extent=extent)
+    [_with_position(node, scaled_xs[index], scaled_ys[index]) for (index, node) in pairs(nodes)]
+end
+
+function _assign_layered_tree_positions!(xs, ys, children, depths, node_index, next_leaf_x; level_gap=1.0, sibling_gap=1.0)
+    child_indices = children[node_index]
+    if isempty(child_indices)
+        xs[node_index] = next_leaf_x[]
+        next_leaf_x[] += sibling_gap
+    else
+        for child_index in child_indices
+            _assign_layered_tree_positions!(xs, ys, children, depths, child_index, next_leaf_x; level_gap=level_gap, sibling_gap=sibling_gap)
+        end
+        xs[node_index] = (xs[first(child_indices)] + xs[last(child_indices)]) / 2
+    end
+    ys[node_index] = -depths[node_index] * level_gap
+    nothing
+end
+
+function _radial_tree_layout(
+    nodes::Vector{NodeSpec},
+    edges::Vector{EdgeSpec};
+    root=nothing,
+    level_gap=1.0,
+    sibling_gap=1.0,
+    extent=1.0,
+)
+    count = length(nodes)
+    count == 0 && return NodeSpec[]
+    count == 1 && return [_with_position(only(nodes), 0.0, 0.0)]
+
+    structure = _tree_structure(nodes, edges; root=root)
+    linear_xs = zeros(Float64, count)
+    next_leaf_x = Ref(0.0)
+    for root_index in structure.root_indices
+        _assign_radial_tree_order!(linear_xs, structure.children, root_index, next_leaf_x; sibling_gap=sibling_gap)
+        next_leaf_x[] += sibling_gap
+    end
+
+    total_span = max(next_leaf_x[] - sibling_gap, sibling_gap)
+    xs = zeros(Float64, count)
+    ys = zeros(Float64, count)
+    for index in 1:count
+        depth = structure.depths[index]
+        radius = depth * level_gap
+        if radius == 0.0
+            xs[index] = 0.0
+            ys[index] = 0.0
+            continue
+        end
+        angle = 2pi * linear_xs[index] / total_span
+        xs[index] = radius * cos(angle)
+        ys[index] = radius * sin(angle)
+    end
+
+    scaled_xs, scaled_ys = _rescale_positions(xs, ys; extent=extent)
+    [_with_position(node, scaled_xs[index], scaled_ys[index]) for (index, node) in pairs(nodes)]
+end
+
+function _assign_radial_tree_order!(linear_xs, children, node_index, next_leaf_x; sibling_gap=1.0)
+    child_indices = children[node_index]
+    if isempty(child_indices)
+        linear_xs[node_index] = next_leaf_x[]
+        next_leaf_x[] += sibling_gap
+    else
+        for child_index in child_indices
+            _assign_radial_tree_order!(linear_xs, children, child_index, next_leaf_x; sibling_gap=sibling_gap)
+        end
+        linear_xs[node_index] = (linear_xs[first(child_indices)] + linear_xs[last(child_indices)]) / 2
+    end
+    nothing
+end
+
+function _tree_structure(nodes::Vector{NodeSpec}, edges::Vector{EdgeSpec}; root=nothing)
+    count = length(nodes)
+    node_index = Dict(node.id => index for (index, node) in pairs(nodes))
+    undirected = [Int[] for _ in 1:count]
+    children = [Int[] for _ in 1:count]
+    indegree = zeros(Int, count)
+
+    for edge in edges
+        source = get(node_index, edge.source, 0)
+        target = get(node_index, edge.target, 0)
+        source == 0 && continue
+        target == 0 && continue
+        source == target && continue
+        push!(undirected[source], target)
+        push!(undirected[target], source)
+        push!(children[source], target)
+        indegree[target] += 1
+    end
+
+    root_index = _tree_root_index(root, node_index)
+    root_candidates = Int[]
+    if isnothing(root_index)
+        for index in 1:count
+            indegree[index] == 0 && push!(root_candidates, index)
+        end
+    else
+        push!(root_candidates, root_index)
+    end
+
+    isempty(root_candidates) && push!(root_candidates, _fallback_tree_root(undirected, nodes))
+
+    visited = falses(count)
+    parent = fill(0, count)
+    depths = fill(-1, count)
+    ordered_roots = Int[]
+
+    for candidate in root_candidates
+        visited[candidate] && continue
+        push!(ordered_roots, candidate)
+        _orient_tree_component!(candidate, undirected, visited, parent, depths)
+    end
+
+    while true
+        next_root = 0
+        next_degree = -1
+        for index in 1:count
+            visited[index] && continue
+            degree = length(undirected[index])
+            if degree > next_degree
+                next_root = index
+                next_degree = degree
+            end
+        end
+        next_root == 0 && break
+        push!(ordered_roots, next_root)
+        _orient_tree_component!(next_root, undirected, visited, parent, depths)
+    end
+
+    oriented_children = [Int[] for _ in 1:count]
+    for index in 1:count
+        parent[index] == 0 && continue
+        push!(oriented_children[parent[index]], index)
+    end
+    for child_list in oriented_children
+        sort!(child_list)
+    end
+
+    (root_indices=ordered_roots, children=oriented_children, depths=depths)
+end
+
+function _tree_root_index(root, node_index)
+    isnothing(root) && return nothing
+    index = get(node_index, string(root), 0)
+    index == 0 && error("Unknown tree root: $(root)")
+    index
+end
+
+function _fallback_tree_root(undirected, nodes)
+    best_index = 1
+    best_degree = -1
+    for (index, node) in pairs(nodes)
+        degree = length(undirected[index])
+        if degree > best_degree || (degree == best_degree && node.id < nodes[best_index].id)
+            best_index = index
+            best_degree = degree
+        end
+    end
+    best_index
+end
+
+function _orient_tree_component!(root_index, undirected, visited, parent, depths)
+    queue = [root_index]
+    visited[root_index] = true
+    depths[root_index] = 0
+    head = 1
+    while head <= length(queue)
+        current = queue[head]
+        head += 1
+        for neighbor in undirected[current]
+            visited[neighbor] && continue
+            visited[neighbor] = true
+            parent[neighbor] = current
+            depths[neighbor] = depths[current] + 1
+            push!(queue, neighbor)
+        end
+    end
+    nothing
 end
 
 function _force_directed_layout(nodes::Vector{NodeSpec}, edges::Vector{EdgeSpec}; algorithm=:fruchterman_reingold, kwargs...)

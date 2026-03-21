@@ -11,7 +11,7 @@ using LinearAlgebra
 using Random
 using UUIDs
 
-export EdgeSpec, NodeSpec, SigmaConfig, SigmaGraph, circular_layout, force_directed_layout, graph, grid_layout, random_layout, render, savehtml, spectral_layout, spring_layout
+export EdgeSpec, NodeSpec, SigmaConfig, SigmaGraph, circular_layout, force_directed_layout, graph, grid_layout, random_layout, render, savehtml, spectral_layout, spring_layout, tree_layout
 
 include("types.jl")
 include("normalize.jl")

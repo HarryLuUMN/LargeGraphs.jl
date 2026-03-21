@@ -84,6 +84,7 @@ or `display` the value returned by `render(...)` or `graph(...)`.
 The repository includes:
 
 - `examples/demo_notebook.ipynb` for an IJulia notebook workflow.
+- `examples/demo_layout_functions.ipynb` for direct layout function demos.
 - `examples/demo_large_graph.jl` for script-based standalone export.
 
 Typical notebook setup:
@@ -117,6 +118,7 @@ usually show up there immediately.
 - `random_layout(nodes; seed, extent)` assigns random coordinates.
 - `circular_layout(nodes; radius, start_angle)` places nodes on a circle.
 - `grid_layout(nodes; columns, spacing)` places nodes on a centered grid.
+- `tree_layout(nodes, edges; algorithm=:layered, kwargs...)` runs tree-oriented layouts with `:layered` and `:radial`.
 - `force_directed_layout(nodes, edges; algorithm=:fruchterman_reingold, kwargs...)` runs a force-directed family with `:fruchterman_reingold`, `:kamada_kawai`, or `:forceatlas2`.
 - `spring_layout(nodes, edges; iterations, seed, extent, gravity, cooling)` remains as a compatibility alias for Fruchterman-Reingold.
 
@@ -135,11 +137,21 @@ Or you can let `render` apply the layout for you:
 viz = render(nodes, edges; layout=:force_directed, algorithm=:kamada_kawai, iterations=120, seed=3)
 ```
 
+Tree-shaped data can use a tree-specific layout:
+
+```julia
+viz = render(nodes, edges; layout=:tree, algorithm=:layered, root="a", extent=2.0)
+```
+
 `layout` accepts:
 
-- symbols: `:random`, `:circular`, `:grid`, `:spectral`, `:spring`, `:force_directed`
+- symbols: `:random`, `:circular`, `:grid`, `:spectral`, `:tree`, `:spring`, `:force_directed`
 - strings with the same names
 - a custom callable of the form `(nodes, edges; kwargs...) -> positioned_nodes`
+
+With `layout=:tree`, select the specific algorithm via `algorithm=`:
+- `:layered`
+- `:radial`
 
 With `layout=:force_directed`, select the specific algorithm via `algorithm=`:
 - `:fruchterman_reingold`
@@ -233,7 +245,7 @@ bootstrapping.
 Reduce labels, lower node sizes, and enable `hide_edges_on_move=true`. The demo
 script uses these settings for a reason. Force-directed layouts (`:spring` and
 `:force_directed`) use iterative simulation and are generally more expensive
-than `:random`, `:circular`, or `:grid`.
+than `:random`, `:circular`, `:grid`, or `:tree`.
 
 ## Limitations
 

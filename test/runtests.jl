@@ -20,6 +20,23 @@ using LargeGraphs
         (source="c", target="d", color="#94a3b8"),
     ]
 
+    tree_nodes = [
+        (id="root", label="Root", color="#2563eb"),
+        (id="left", label="Left", color="#059669"),
+        (id="right", label="Right", color="#d97706"),
+        (id="left-left", label="LeftLeft", color="#7c3aed"),
+        (id="left-right", label="LeftRight", color="#db2777"),
+        (id="right-left", label="RightLeft", color="#0891b2"),
+    ]
+
+    tree_edges = [
+        (source="root", target="left", color="#94a3b8"),
+        (source="root", target="right", color="#94a3b8"),
+        (source="left", target="left-left", color="#94a3b8"),
+        (source="left", target="left-right", color="#94a3b8"),
+        (source="right", target="right-left", color="#94a3b8"),
+    ]
+
     viz = render(positioned_nodes, [(source="a", target="b", color="#94a3b8")])
 
     @test viz isa SigmaGraph
@@ -51,6 +68,26 @@ using LargeGraphs
     @test all(-1.5 <= node.x <= 1.5 for node in spectral_nodes)
     @test all(-1.5 <= node.y <= 1.5 for node in spectral_nodes)
     @test length(Set((round(node.x, digits=6), round(node.y, digits=6)) for node in spectral_nodes)) >= 2
+
+    layered_tree_nodes = tree_layout(tree_nodes, tree_edges; algorithm=:layered, root="root", extent=1.5)
+    layered_depths = Dict(node.id => node.y for node in layered_tree_nodes)
+    @test [node.id for node in layered_tree_nodes] == ["root", "left", "right", "left-left", "left-right", "right-left"]
+    @test layered_depths["root"] > layered_depths["left"]
+    @test layered_depths["left"] > layered_depths["left-left"]
+    @test layered_depths["left"] > layered_depths["left-right"]
+    @test layered_depths["right"] > layered_depths["right-left"]
+    @test all(-1.5 <= node.x <= 1.5 for node in layered_tree_nodes)
+    @test all(-1.5 <= node.y <= 1.5 for node in layered_tree_nodes)
+
+    radial_tree_nodes = tree_layout(tree_nodes, tree_edges; algorithm=:radial, root="root", extent=1.5)
+    radial_radii = Dict(node.id => sqrt(node.x^2 + node.y^2) for node in radial_tree_nodes)
+    @test radial_radii["root"] < radial_radii["left"]
+    @test radial_radii["root"] < radial_radii["right"]
+    @test radial_radii["left-left"] > radial_radii["left"]
+    @test radial_radii["left-right"] > radial_radii["left"]
+    @test radial_radii["right-left"] > radial_radii["right"]
+    @test all(-1.5 <= node.x <= 1.5 for node in radial_tree_nodes)
+    @test all(-1.5 <= node.y <= 1.5 for node in radial_tree_nodes)
 
     spring_nodes = spring_layout(layout_nodes, edges; iterations=40, seed=5, extent=1.5)
     @test [node.id for node in spring_nodes] == ["a", "b", "c", "d"]
@@ -85,6 +122,12 @@ using LargeGraphs
     @test all(-1.2 <= node.x <= 1.2 for node in spectral_viz.nodes)
     @test all(-1.2 <= node.y <= 1.2 for node in spectral_viz.nodes)
 
+    tree_viz = render(tree_nodes, tree_edges; layout=:tree, algorithm=:layered, root="root", extent=1.2)
+    @test tree_viz isa SigmaGraph
+    @test tree_viz.nodes[1].y > tree_viz.nodes[2].y
+    @test all(-1.2 <= node.x <= 1.2 for node in tree_viz.nodes)
+    @test all(-1.2 <= node.y <= 1.2 for node in tree_viz.nodes)
+
     force_viz = render(
         layout_nodes,
         edges;
@@ -106,6 +149,8 @@ using LargeGraphs
     @test [node.y for node in custom_viz.nodes] == [-1.0, -2.0, -3.0, -4.0]
 
     @test_throws "Unsupported force-directed algorithm" force_directed_layout(layout_nodes, edges; algorithm=:unknown)
+    @test_throws "Unsupported tree layout algorithm" tree_layout(tree_nodes, tree_edges; algorithm=:unknown)
+    @test_throws "Unknown tree root" tree_layout(tree_nodes, tree_edges; root="missing")
 
     html = sprint(show, MIME"text/html"(), viz)
     @test occursin("large-graphs-jl-root", html)

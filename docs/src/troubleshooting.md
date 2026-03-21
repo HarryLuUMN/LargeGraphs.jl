@@ -23,6 +23,7 @@ Try one of the built-in layouts first:
 - `layout=:random` for a quick spread
 - `layout=:circular` for small ordered graphs
 - `layout=:grid` for regular overviews
+- `layout=:tree` for rooted trees and forests
 - `layout=:spring` for Fruchterman-Reingold structure-aware layouts
 - `layout=:force_directed` with `algorithm=:kamada_kawai` or `:forceatlas2` for alternative structure-aware layouts
 
