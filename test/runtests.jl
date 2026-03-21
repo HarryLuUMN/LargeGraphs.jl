@@ -106,6 +106,8 @@ using LargeGraphsJL
     @test occursin("defaultMaxActiveViews = 4", read(joinpath(pkgdir(LargeGraphsJL), "assets", "sigma-viewer.js"), String))
     @test occursin("Graph paused to keep the notebook responsive", read(joinpath(pkgdir(LargeGraphsJL), "assets", "sigma-viewer.js"), String))
     @test occursin("window.LargeGraphsJLMaxActiveViews", read(joinpath(pkgdir(LargeGraphsJL), "assets", "sigma-viewer.js"), String))
+    @test occursin("Paused Preview", read(joinpath(pkgdir(LargeGraphsJL), "assets", "sigma-viewer.js"), String))
+    @test occursin("Reactivate graph", read(joinpath(pkgdir(LargeGraphsJL), "assets", "sigma-viewer.js"), String))
 
     tempdir = mktempdir()
     output = joinpath(tempdir, "graph.html")

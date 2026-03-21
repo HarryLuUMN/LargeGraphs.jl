@@ -106,18 +106,46 @@
       const image = document.createElement("img");
       image.src = preview;
       image.alt = "Paused graph preview";
-      image.style.cssText = "display:block;width:100%;height:100%;object-fit:contain;";
+      image.style.cssText = "display:block;width:100%;height:100%;object-fit:contain;filter:saturate(0.96) contrast(1.02);transform:scale(1.01);";
       stage.appendChild(image);
     }
 
+    const veil = document.createElement("div");
+    veil.style.cssText = "position:absolute;inset:0;background:linear-gradient(180deg, rgba(248,250,252,0.10) 0%, rgba(248,250,252,0.18) 34%, rgba(255,255,255,0.78) 100%);backdrop-filter:blur(3px);";
+    stage.appendChild(veil);
+
+    const panel = document.createElement("div");
+    panel.style.cssText = "position:absolute;left:20px;right:20px;bottom:20px;display:flex;align-items:flex-end;justify-content:space-between;gap:16px;padding:16px 18px;border:1px solid rgba(148,163,184,0.28);border-radius:18px;background:rgba(255,255,255,0.82);box-shadow:0 18px 48px rgba(15,23,42,0.14);backdrop-filter:blur(18px);";
+
+    const copy = document.createElement("div");
+    copy.style.cssText = "display:flex;flex-direction:column;gap:8px;min-width:0;";
+
+    const badge = document.createElement("div");
+    badge.textContent = "Paused Preview";
+    badge.style.cssText = "align-self:flex-start;padding:5px 10px;border-radius:999px;background:rgba(15,23,42,0.08);font:600 11px/1.2 ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;letter-spacing:0.08em;text-transform:uppercase;color:#334155;";
+    copy.appendChild(badge);
+
+    const title = document.createElement("div");
+    title.textContent = "Interactive graph paused";
+    title.style.cssText = "font:600 18px/1.2 ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;color:#0f172a;";
+    copy.appendChild(title);
+
+    const body = document.createElement("div");
+    body.textContent = message || "This graph was parked as a static preview to keep the notebook smooth. Reactivate it whenever you want to explore again.";
+    body.style.cssText = "max-width:560px;font:500 13px/1.5 ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;color:#475569;";
+    copy.appendChild(body);
+
     const button = document.createElement("button");
     button.type = "button";
-    button.textContent = message || "Graph paused to stay under browser WebGL limits. Click to reactivate.";
-    button.style.cssText = "position:absolute;left:12px;right:12px;bottom:12px;padding:10px 12px;border:1px solid #d1d5db;border-radius:8px;background:rgba(255,255,255,0.92);font:13px sans-serif;color:#111827;text-align:left;cursor:pointer;";
+    button.textContent = "Reactivate graph";
+    button.style.cssText = "flex:none;padding:11px 16px;border:0;border-radius:999px;background:linear-gradient(135deg, #0f172a 0%, #334155 100%);box-shadow:0 10px 24px rgba(15,23,42,0.22);font:600 13px/1 ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;color:#f8fafc;cursor:pointer;white-space:nowrap;";
     button.addEventListener("click", function () {
       void render(root.id);
     });
-    stage.appendChild(button);
+
+    panel.appendChild(copy);
+    panel.appendChild(button);
+    stage.appendChild(panel);
   }
 
   function pauseRoot(root, message) {
