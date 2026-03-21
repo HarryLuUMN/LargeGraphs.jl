@@ -1,5 +1,5 @@
 (function () {
-  if (window.LargeGraphsJL) {
+  if (window.LargeGraphs) {
     return;
   }
 
@@ -10,7 +10,7 @@
   const activeRoots = [];
 
   function maxActiveViews() {
-    const configured = Number(window.LargeGraphsJLMaxActiveViews);
+    const configured = Number(window.LargeGraphsMaxActiveViews);
     if (Number.isFinite(configured) && configured >= 1) {
       return Math.floor(configured);
     }
@@ -505,5 +505,5 @@
     }
   }
 
-  window.LargeGraphsJL = { render };
+  window.LargeGraphs = { render };
 })();

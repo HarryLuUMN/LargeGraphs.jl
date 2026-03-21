@@ -1,6 +1,6 @@
-# LargeGraphsJL
+# LargeGraphs
 
-`LargeGraphsJL` is a small Julia package for rendering interactive graph
+`LargeGraphs` is a small Julia package for rendering interactive graph
 visualizations with [Sigma.js](https://www.sigmajs.org/) in IJulia and Jupyter
 notebooks. It accepts plain Julia collections, includes a lightweight batch of
 classic layout algorithms, produces notebook-friendly HTML, and can export
@@ -40,13 +40,13 @@ Pkg.add("IJulia")
 ```
 
 If the package is installed in one environment and the notebook kernel points
-at another, `using LargeGraphsJL` will fail inside the notebook even if it works
+at another, `using LargeGraphs` will fail inside the notebook even if it works
 from the terminal.
 
 ## Quick Start
 
 ```julia
-using LargeGraphsJL
+using LargeGraphs
 
 nodes = [
     (id="a", size=3.0, label="A", color="#2563eb"),
@@ -93,7 +93,7 @@ using Pkg
 Pkg.activate(isdir(joinpath(pwd(), "src")) ? pwd() : joinpath(pwd(), ".."))
 Pkg.instantiate()
 
-using LargeGraphsJL
+using LargeGraphs
 ```
 
 When a graph does not render in Jupyter, open the browser console first. The
@@ -211,7 +211,7 @@ display(render(nodes, edges; layout=diagonal_layout, gap=0.75))
 
 ## Troubleshooting
 
-### `using LargeGraphsJL` fails in the notebook
+### `using LargeGraphs` fails in the notebook
 
 The notebook kernel is usually using a different Julia environment than the one
 where the package was added. Activate the intended environment in the notebook
@@ -263,7 +263,7 @@ Source pages:
 
 ## Repository Layout
 
-- `src/LargeGraphsJL.jl`: package source and public API.
+- `src/LargeGraphs.jl`: package source and public API.
 - `assets/sigma-viewer.js`: browser bootstrap for Sigma.js rendering.
 - `examples/demo_notebook.ipynb`: notebook demo.
 - `examples/demo_large_graph.jl`: script demo with standalone export.

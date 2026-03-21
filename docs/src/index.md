@@ -1,6 +1,6 @@
-# LargeGraphsJL Documentation
+# LargeGraphs Documentation
 
-`LargeGraphsJL` renders interactive Sigma.js graph views from plain Julia data.
+`LargeGraphs` renders interactive Sigma.js graph views from plain Julia data.
 It is designed for notebook-first exploration with the option to export
 standalone HTML snapshots, and it now includes a small batch of built-in layout
 algorithms for basic graph drawing.

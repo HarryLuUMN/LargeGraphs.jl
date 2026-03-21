@@ -1,10 +1,10 @@
 """
-    LargeGraphsJL
+    LargeGraphs
 
 Render interactive Sigma.js graph visualizations from Julia data structures,
 with notebook-friendly HTML output and standalone HTML export.
 """
-module LargeGraphsJL
+module LargeGraphs
 
 using JSON3
 using Random

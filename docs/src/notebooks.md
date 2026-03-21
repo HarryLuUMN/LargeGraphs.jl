@@ -2,7 +2,7 @@
 
 ## Environment Setup
 
-In an IJulia notebook, activate the environment that contains `LargeGraphsJL`
+In an IJulia notebook, activate the environment that contains `LargeGraphs`
 before importing the package:
 
 ```julia
@@ -14,7 +14,7 @@ Pkg.instantiate()
 Then load the package:
 
 ```julia
-using LargeGraphsJL
+using LargeGraphs
 ```
 
 ## Rendering

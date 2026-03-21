@@ -2,7 +2,7 @@
 
 ## Package import problems
 
-If `using LargeGraphsJL` fails in a notebook, the notebook kernel is probably
+If `using LargeGraphs` fails in a notebook, the notebook kernel is probably
 running a different environment than the one where the package was installed.
 Activate the intended environment explicitly in the notebook.
 

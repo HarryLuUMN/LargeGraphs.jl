@@ -1,7 +1,7 @@
 # API Reference
 
 ```@docs
-LargeGraphsJL
+LargeGraphs
 NodeSpec
 EdgeSpec
 SigmaConfig

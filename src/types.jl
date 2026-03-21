@@ -58,7 +58,7 @@ end
 """
     SigmaGraph
 
-Normalized graph object used by `LargeGraphsJL` for HTML rendering and export.
+Normalized graph object used by `LargeGraphs` for HTML rendering and export.
 """
 struct SigmaGraph
     id::String

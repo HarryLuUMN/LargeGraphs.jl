@@ -1,4 +1,4 @@
-using LargeGraphsJL
+using LargeGraphs
 using Random
 
 function random_graph(node_count::Integer=10_000, edge_count::Integer=30_000; seed::Integer=7)

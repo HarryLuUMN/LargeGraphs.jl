@@ -85,7 +85,7 @@ function _html(value::SigmaGraph)
     <script type="application/json" id="$(value.id)-payload">$(payload)</script>
     <script>
     $(bootstrap)
-    void window.LargeGraphsJL.render("$(value.id)");
+    void window.LargeGraphs.render("$(value.id)");
     </script>
     """
 end
@@ -97,7 +97,7 @@ function _standalone_html(value::SigmaGraph)
     <head>
       <meta charset="utf-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1" />
-      <title>LargeGraphsJL Demo</title>
+      <title>LargeGraphs Demo</title>
     </head>
     <body>
     $(_html(value))

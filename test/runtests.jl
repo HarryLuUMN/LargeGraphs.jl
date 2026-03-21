@@ -1,7 +1,7 @@
 using Test
-using LargeGraphsJL
+using LargeGraphs
 
-@testset "LargeGraphsJL" begin
+@testset "LargeGraphs" begin
     positioned_nodes = [
         (id="a", x=0.0, y=0.0, label="A", color="#2563eb"),
         Dict("id" => "b", "x" => 1.0, "y" => 1.0, "label" => "B", "color" => "#059669"),
@@ -98,22 +98,22 @@ using LargeGraphsJL
 
     html = sprint(show, MIME"text/html"(), viz)
     @test occursin("large-graphs-jl-root", html)
-    @test occursin("window.LargeGraphsJL.render", html)
-    @test occursin("void window.LargeGraphsJL.render", html)
-    @test occursin("Loading Sigma.js", read(joinpath(pkgdir(LargeGraphsJL), "assets", "sigma-viewer.js"), String))
-    @test occursin("root.__largeGraphsJlRenderToken", read(joinpath(pkgdir(LargeGraphsJL), "assets", "sigma-viewer.js"), String))
-    @test occursin("root.__largeGraphsJlSigma.kill()", read(joinpath(pkgdir(LargeGraphsJL), "assets", "sigma-viewer.js"), String))
-    @test occursin("defaultMaxActiveViews = 4", read(joinpath(pkgdir(LargeGraphsJL), "assets", "sigma-viewer.js"), String))
-    @test occursin("Graph paused to keep the notebook responsive", read(joinpath(pkgdir(LargeGraphsJL), "assets", "sigma-viewer.js"), String))
-    @test occursin("window.LargeGraphsJLMaxActiveViews", read(joinpath(pkgdir(LargeGraphsJL), "assets", "sigma-viewer.js"), String))
-    @test occursin("Paused Preview", read(joinpath(pkgdir(LargeGraphsJL), "assets", "sigma-viewer.js"), String))
-    @test occursin("Reactivate graph", read(joinpath(pkgdir(LargeGraphsJL), "assets", "sigma-viewer.js"), String))
-    @test occursin("drawFallbackPreview", read(joinpath(pkgdir(LargeGraphsJL), "assets", "sigma-viewer.js"), String))
-    @test occursin("createPreview(root, stage)", read(joinpath(pkgdir(LargeGraphsJL), "assets", "sigma-viewer.js"), String))
-    @test occursin("Fit View", read(joinpath(pkgdir(LargeGraphsJL), "assets", "sigma-viewer.js"), String))
-    @test occursin("camera.animate", read(joinpath(pkgdir(LargeGraphsJL), "assets", "sigma-viewer.js"), String))
-    @test occursin("setCustomBBox", read(joinpath(pkgdir(LargeGraphsJL), "assets", "sigma-viewer.js"), String))
-    @test occursin("ratio: 1", read(joinpath(pkgdir(LargeGraphsJL), "assets", "sigma-viewer.js"), String))
+    @test occursin("window.LargeGraphs.render", html)
+    @test occursin("void window.LargeGraphs.render", html)
+    @test occursin("Loading Sigma.js", read(joinpath(pkgdir(LargeGraphs), "assets", "sigma-viewer.js"), String))
+    @test occursin("root.__largeGraphsJlRenderToken", read(joinpath(pkgdir(LargeGraphs), "assets", "sigma-viewer.js"), String))
+    @test occursin("root.__largeGraphsJlSigma.kill()", read(joinpath(pkgdir(LargeGraphs), "assets", "sigma-viewer.js"), String))
+    @test occursin("defaultMaxActiveViews = 4", read(joinpath(pkgdir(LargeGraphs), "assets", "sigma-viewer.js"), String))
+    @test occursin("Graph paused to keep the notebook responsive", read(joinpath(pkgdir(LargeGraphs), "assets", "sigma-viewer.js"), String))
+    @test occursin("window.LargeGraphsMaxActiveViews", read(joinpath(pkgdir(LargeGraphs), "assets", "sigma-viewer.js"), String))
+    @test occursin("Paused Preview", read(joinpath(pkgdir(LargeGraphs), "assets", "sigma-viewer.js"), String))
+    @test occursin("Reactivate graph", read(joinpath(pkgdir(LargeGraphs), "assets", "sigma-viewer.js"), String))
+    @test occursin("drawFallbackPreview", read(joinpath(pkgdir(LargeGraphs), "assets", "sigma-viewer.js"), String))
+    @test occursin("createPreview(root, stage)", read(joinpath(pkgdir(LargeGraphs), "assets", "sigma-viewer.js"), String))
+    @test occursin("Fit View", read(joinpath(pkgdir(LargeGraphs), "assets", "sigma-viewer.js"), String))
+    @test occursin("camera.animate", read(joinpath(pkgdir(LargeGraphs), "assets", "sigma-viewer.js"), String))
+    @test occursin("setCustomBBox", read(joinpath(pkgdir(LargeGraphs), "assets", "sigma-viewer.js"), String))
+    @test occursin("ratio: 1", read(joinpath(pkgdir(LargeGraphs), "assets", "sigma-viewer.js"), String))
 
     tempdir = mktempdir()
     output = joinpath(tempdir, "graph.html")

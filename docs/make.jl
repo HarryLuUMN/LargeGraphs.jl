@@ -1,9 +1,9 @@
 using Documenter
-using LargeGraphsJL
+using LargeGraphs
 
 makedocs(
-    sitename = "LargeGraphsJL.jl",
-    modules = [LargeGraphsJL],
+    sitename = "LargeGraphs.jl",
+    modules = [LargeGraphs],
     format = Documenter.HTML(prettyurls = get(ENV, "CI", "false") == "true"),
     pages = [
         "Home" => "index.md",
