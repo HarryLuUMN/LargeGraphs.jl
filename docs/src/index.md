@@ -16,7 +16,15 @@ It does not attempt to be a graph algorithms package or a layout engine.
 
 ## Start Here
 
-- Read the project [README](../README.md) for installation and a quick start.
 - Use [API reference](api.md) for constructor and function details.
 - Use [Notebook guide](notebooks.md) for IJulia and Jupyter workflows.
 - Use [Troubleshooting](troubleshooting.md) when rendering does not behave as expected.
+
+## Local Docs Build
+
+From the repository root, instantiate the docs environment and build:
+
+```bash
+julia --project=docs -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
+julia --project=docs docs/make.jl
+```

@@ -190,12 +190,22 @@ script uses these settings for a reason.
 - Validation of duplicate node IDs or missing referenced nodes is delegated to the browser-side graph construction path.
 - Very large graphs still depend on browser memory and WebGL performance.
 
-## Additional Documentation
+## Documentation
 
-- [`docs/index.md`](docs/index.md)
-- [`docs/api.md`](docs/api.md)
-- [`docs/notebooks.md`](docs/notebooks.md)
-- [`docs/troubleshooting.md`](docs/troubleshooting.md)
+The repository includes a small `Documenter.jl` site under `docs/`. The source
+pages live in `docs/src/`, and you can build them locally with:
+
+```bash
+julia --project=docs -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
+julia --project=docs docs/make.jl
+```
+
+Source pages:
+
+- [`docs/src/index.md`](docs/src/index.md)
+- [`docs/src/api.md`](docs/src/api.md)
+- [`docs/src/notebooks.md`](docs/src/notebooks.md)
+- [`docs/src/troubleshooting.md`](docs/src/troubleshooting.md)
 
 ## Repository Layout
 

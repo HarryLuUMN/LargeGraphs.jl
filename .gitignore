@@ -1,2 +1,5 @@
 examples/demo_large_graph.html
 examples/demo_notebook.executed.ipynb
+.julia_depot/
+docs/build/
+docs/Manifest.toml
