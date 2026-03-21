@@ -10,7 +10,7 @@ algorithms for basic graph drawing.
 This package is intentionally small:
 
 - normalize node and edge inputs into a stable internal form
-- compute lightweight random, circular, grid, and force-directed layouts
+- compute lightweight random, circular, grid, spectral, and force-directed layouts
 - render HTML suitable for IJulia and Jupyter display
 - export a standalone HTML document for sharing outside the notebook
 
@@ -25,9 +25,9 @@ layout engine.
 
 ## Layout Entry Points
 
-- Call `random_layout`, `circular_layout`, `grid_layout`, `force_directed_layout`,
+- Call `random_layout`, `circular_layout`, `grid_layout`, `spectral_layout`, `force_directed_layout`,
   or `spring_layout` directly when you want explicit positioned nodes.
-- Pass `layout=:random`, `:circular`, `:grid`, `:spring`, or `:force_directed`
+- Pass `layout=:random`, `:circular`, `:grid`, `:spectral`, `:spring`, or `:force_directed`
   to `graph(...)` or `render(...)` when you want layout as a convenience.
 - For `layout=:force_directed`, choose `algorithm=:fruchterman_reingold`,
   `:kamada_kawai`, or `:forceatlas2`.

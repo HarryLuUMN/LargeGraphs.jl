@@ -7,10 +7,11 @@ with notebook-friendly HTML output and standalone HTML export.
 module LargeGraphs
 
 using JSON3
+using LinearAlgebra
 using Random
 using UUIDs
 
-export EdgeSpec, NodeSpec, SigmaConfig, SigmaGraph, circular_layout, force_directed_layout, graph, grid_layout, random_layout, render, savehtml, spring_layout
+export EdgeSpec, NodeSpec, SigmaConfig, SigmaGraph, circular_layout, force_directed_layout, graph, grid_layout, random_layout, render, savehtml, spectral_layout, spring_layout
 
 include("types.jl")
 include("normalize.jl")

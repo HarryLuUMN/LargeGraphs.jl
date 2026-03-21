@@ -9,6 +9,7 @@ SigmaGraph
 random_layout
 circular_layout
 grid_layout
+spectral_layout
 spring_layout
 force_directed_layout
 graph
@@ -75,7 +76,7 @@ Normalizes supported node and edge inputs into a `SigmaGraph`.
 
 When `layout` is provided, the layout is applied before the graph is wrapped in
 `SigmaGraph`. Built-in layouts may be selected with `:random`, `:circular`,
-`:grid`, `:spring`, or `:force_directed`.
+`:grid`, `:spectral`, `:spring`, or `:force_directed`.
 
 ### `render`
 
@@ -115,6 +116,15 @@ grid_layout(nodes, edges; columns=nothing, spacing=1.0)
 ```
 
 Returns positioned `NodeSpec` values on a centered rectangular grid.
+
+### `spectral_layout`
+
+```julia
+spectral_layout(nodes, edges; extent=1.0, jitter=1.0e-6, seed=nothing)
+```
+
+Returns positioned `NodeSpec` values from a spectral embedding of the graph Laplacian.
+This works best on connected graphs and is a lightweight non-iterative alternative to force simulation.
 
 ### `spring_layout`
 

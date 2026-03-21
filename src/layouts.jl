@@ -41,6 +41,15 @@ function grid_layout(nodes, edges; kwargs...)
 end
 
 """
+    spectral_layout(nodes, edges; extent=1.0, jitter=1.0e-6, seed=nothing)
+
+Compute a spectral embedding from the graph Laplacian.
+"""
+function spectral_layout(nodes, edges; kwargs...)
+    _spectral_layout(_normalize_nodes(nodes), _normalize_edges(edges); kwargs...)
+end
+
+"""
     force_directed_layout(nodes, edges; algorithm=:fruchterman_reingold, kwargs...)
 
 Compute a lightweight force-directed layout from the graph structure.
@@ -124,6 +133,36 @@ function _grid_layout(nodes::Vector{NodeSpec}; columns=nothing, spacing=1.0)
         )
     end
     positioned
+end
+
+function _spectral_layout(nodes::Vector{NodeSpec}, edges::Vector{EdgeSpec}; extent=1.0, jitter=1.0e-6, seed=nothing)
+    count = length(nodes)
+    count == 0 && return NodeSpec[]
+    count == 1 && return [_with_position(only(nodes), 0.0, 0.0)]
+
+    adjacency = zeros(Float64, count, count)
+    for (source, target) in _edge_indices(nodes, edges)
+        adjacency[source, target] += 1.0
+        adjacency[target, source] += 1.0
+    end
+
+    degree = vec(sum(adjacency; dims=2))
+    laplacian = Diagonal(degree) - adjacency
+    eigenpairs = eigen(Symmetric(laplacian))
+    order = sortperm(eigenpairs.values)
+
+    x_index = length(order) >= 2 ? order[2] : order[1]
+    y_index = length(order) >= 3 ? order[3] : order[min(2, length(order))]
+    xs = collect(eigenpairs.vectors[:, x_index])
+    ys = collect(eigenpairs.vectors[:, y_index])
+
+    if x_index == y_index || maximum(abs, ys) <= eps(Float64)
+        rng = _layout_rng(seed)
+        ys = [jitter * (2.0 * rand(rng) - 1.0) + jitter * (i - (count + 1) / 2) for i in 1:count]
+    end
+
+    xs, ys = _rescale_positions(xs, ys; extent=extent)
+    [_with_position(node, xs[index], ys[index]) for (index, node) in pairs(nodes)]
 end
 
 function _force_directed_layout(nodes::Vector{NodeSpec}, edges::Vector{EdgeSpec}; algorithm=:fruchterman_reingold, kwargs...)

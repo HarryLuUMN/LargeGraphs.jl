@@ -46,6 +46,12 @@ using LargeGraphs
         (1.5, -1.5),
     ])
 
+    spectral_nodes = spectral_layout(layout_nodes, edges; extent=1.5, seed=5)
+    @test [node.id for node in spectral_nodes] == ["a", "b", "c", "d"]
+    @test all(-1.5 <= node.x <= 1.5 for node in spectral_nodes)
+    @test all(-1.5 <= node.y <= 1.5 for node in spectral_nodes)
+    @test length(Set((round(node.x, digits=6), round(node.y, digits=6)) for node in spectral_nodes)) >= 2
+
     spring_nodes = spring_layout(layout_nodes, edges; iterations=40, seed=5, extent=1.5)
     @test [node.id for node in spring_nodes] == ["a", "b", "c", "d"]
     @test all(-1.5 <= node.x <= 1.5 for node in spring_nodes)

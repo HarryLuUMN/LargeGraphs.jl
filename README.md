@@ -137,7 +137,7 @@ viz = render(nodes, edges; layout=:force_directed, algorithm=:kamada_kawai, iter
 
 `layout` accepts:
 
-- symbols: `:random`, `:circular`, `:grid`, `:spring`, `:force_directed`
+- symbols: `:random`, `:circular`, `:grid`, `:spectral`, `:spring`, `:force_directed`
 - strings with the same names
 - a custom callable of the form `(nodes, edges; kwargs...) -> positioned_nodes`
 
@@ -267,4 +267,6 @@ Source pages:
 - `assets/sigma-viewer.js`: browser bootstrap for Sigma.js rendering.
 - `examples/demo_notebook.ipynb`: notebook demo.
 - `examples/demo_large_graph.jl`: script demo with standalone export.
+- `test/runtests.jl`: package tests.
+_large_graph.jl`: script demo with standalone export.
 - `test/runtests.jl`: package tests.

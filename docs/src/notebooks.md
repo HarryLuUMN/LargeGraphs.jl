@@ -45,5 +45,5 @@ viz = render(positioned_nodes, edges; height="600px")
 
 - Keep labels sparse for large graphs.
 - Use `hide_edges_on_move=true` when panning feels sluggish.
-- Use `:random`, `:circular`, or `:grid` for large graphs; force-directed layouts (`:spring`, `:force_directed`) are more expensive.
+- Use `:random`, `:circular`, `:grid`, or `:spectral` for large graphs when you want cheaper layout options; force-directed layouts (`:spring`, `:force_directed`) are more expensive.
 - Save a standalone HTML copy when you need to share results with someone outside Julia.
