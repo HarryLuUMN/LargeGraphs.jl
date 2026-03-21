@@ -92,13 +92,143 @@
     return frame.toDataURL("image/png");
   }
 
+  function decodeHtml(raw) {
+    return String(raw || "")
+      .replaceAll("&quot;", '"')
+      .replaceAll("&#39;", "'")
+      .replaceAll("&lt;", "<")
+      .replaceAll("&gt;", ">")
+      .replaceAll("&amp;", "&");
+  }
+
+  function parsePayload(root) {
+    const payloadNode = root && document.getElementById(root.id + "-payload");
+    if (!payloadNode) {
+      return null;
+    }
+
+    try {
+      return JSON.parse(decodeHtml(payloadNode.textContent));
+    } catch (_error) {
+      return null;
+    }
+  }
+
+  function drawFallbackPreview(root, stage) {
+    const payload = parsePayload(root);
+    if (!payload) {
+      return null;
+    }
+
+    const width = Math.max(1, Math.round(stage.clientWidth || stage.getBoundingClientRect().width || 0));
+    const height = Math.max(1, Math.round(stage.clientHeight || stage.getBoundingClientRect().height || 0));
+    const frame = document.createElement("canvas");
+    frame.width = width;
+    frame.height = height;
+    const context = frame.getContext("2d");
+    if (!context) {
+      return null;
+    }
+
+    const background = payload.config?.background || stage.style.background || "#ffffff";
+    context.fillStyle = background;
+    context.fillRect(0, 0, width, height);
+
+    const nodes = Array.isArray(payload.nodes) ? payload.nodes : [];
+    const edges = Array.isArray(payload.edges) ? payload.edges : [];
+    if (!nodes.length) {
+      return frame.toDataURL("image/png");
+    }
+
+    let minX = Infinity;
+    let maxX = -Infinity;
+    let minY = Infinity;
+    let maxY = -Infinity;
+    const nodeMap = new Map();
+
+    for (const node of nodes) {
+      const x = Number(node.x) || 0;
+      const y = Number(node.y) || 0;
+      nodeMap.set(String(node.id), node);
+      minX = Math.min(minX, x);
+      maxX = Math.max(maxX, x);
+      minY = Math.min(minY, y);
+      maxY = Math.max(maxY, y);
+    }
+
+    const spanX = Math.max(maxX - minX, 1);
+    const spanY = Math.max(maxY - minY, 1);
+    const padding = Math.max(24, Math.min(width, height) * 0.08);
+    const scale = Math.min((width - padding * 2) / spanX, (height - padding * 2) / spanY);
+    const centerX = (minX + maxX) / 2;
+    const centerY = (minY + maxY) / 2;
+
+    function project(node) {
+      const x = Number(node.x) || 0;
+      const y = Number(node.y) || 0;
+      return {
+        x: width / 2 + (x - centerX) * scale,
+        y: height / 2 - (y - centerY) * scale,
+      };
+    }
+
+    context.lineCap = "round";
+    for (const edge of edges) {
+      const source = nodeMap.get(String(edge.source));
+      const target = nodeMap.get(String(edge.target));
+      if (!source || !target) {
+        continue;
+      }
+
+      const a = project(source);
+      const b = project(target);
+      context.beginPath();
+      context.moveTo(a.x, a.y);
+      context.lineTo(b.x, b.y);
+      context.strokeStyle = edge.color || "rgba(148, 163, 184, 0.55)";
+      context.lineWidth = Math.max(0.75, (Number(edge.size) || 1) * 0.8);
+      context.globalAlpha = 0.9;
+      context.stroke();
+    }
+
+    context.globalAlpha = 1;
+    const labeledNodes = [];
+    for (const node of nodes) {
+      const p = project(node);
+      const radius = Math.max(2.5, Math.min(16, (Number(node.size) || 1) * 2.2));
+      context.beginPath();
+      context.arc(p.x, p.y, radius, 0, Math.PI * 2);
+      context.fillStyle = node.color || "#2563eb";
+      context.shadowColor = "rgba(15, 23, 42, 0.12)";
+      context.shadowBlur = radius * 1.8;
+      context.fill();
+      if (node.label) {
+        labeledNodes.push({ node, p, radius });
+      }
+    }
+
+    context.shadowBlur = 0;
+    context.font = "12px ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+    context.fillStyle = "#334155";
+    context.textBaseline = "middle";
+    for (const item of labeledNodes.slice(0, 80)) {
+      context.fillText(String(item.node.label), item.p.x + item.radius + 4, item.p.y);
+    }
+
+    return frame.toDataURL("image/png");
+  }
+
+  function createPreview(root, stage) {
+    return drawFallbackPreview(root, stage) || snapshotStage(stage);
+  }
+
   function showPausedPreview(root, message) {
     const stage = root && root.querySelector(".large-graphs-jl-stage");
     if (!stage) {
       return;
     }
 
-    const preview = root.__largeGraphsJlPreview || snapshotStage(stage);
+    const preview = root.__largeGraphsJlPreview || createPreview(root, stage);
     stage.innerHTML = "";
     stage.style.position = "relative";
 
@@ -155,7 +285,7 @@
 
     const stage = root.querySelector(".large-graphs-jl-stage");
     if (stage) {
-      root.__largeGraphsJlPreview = snapshotStage(stage);
+      root.__largeGraphsJlPreview = createPreview(root, stage);
     }
 
     cleanup(root);

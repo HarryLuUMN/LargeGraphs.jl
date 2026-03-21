@@ -108,6 +108,8 @@ using LargeGraphsJL
     @test occursin("window.LargeGraphsJLMaxActiveViews", read(joinpath(pkgdir(LargeGraphsJL), "assets", "sigma-viewer.js"), String))
     @test occursin("Paused Preview", read(joinpath(pkgdir(LargeGraphsJL), "assets", "sigma-viewer.js"), String))
     @test occursin("Reactivate graph", read(joinpath(pkgdir(LargeGraphsJL), "assets", "sigma-viewer.js"), String))
+    @test occursin("drawFallbackPreview", read(joinpath(pkgdir(LargeGraphsJL), "assets", "sigma-viewer.js"), String))
+    @test occursin("createPreview(root, stage)", read(joinpath(pkgdir(LargeGraphsJL), "assets", "sigma-viewer.js"), String))
 
     tempdir = mktempdir()
     output = joinpath(tempdir, "graph.html")
