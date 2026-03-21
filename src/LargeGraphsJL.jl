@@ -7,9 +7,10 @@ with notebook-friendly HTML output and standalone HTML export.
 module LargeGraphsJL
 
 using JSON3
+using Random
 using UUIDs
 
-export EdgeSpec, NodeSpec, SigmaConfig, SigmaGraph, graph, render, savehtml
+export EdgeSpec, NodeSpec, SigmaConfig, SigmaGraph, circular_layout, graph, grid_layout, random_layout, render, savehtml, spring_layout
 
 """
     NodeSpec(id; x=0.0, y=0.0, size=1.0, label=nothing, color=nothing, attributes=Dict())
@@ -119,7 +120,7 @@ SigmaConfig(;
 )
 
 """
-    graph(nodes, edges; id="sigma-...", config=SigmaConfig())
+    graph(nodes, edges; id="sigma-...", config=SigmaConfig(), layout=nothing, layout_kwargs...)
 
 Build a normalized `SigmaGraph` from node and edge collections.
 
@@ -128,12 +129,19 @@ of the form `(id, x, y, size=1.0, label=nothing)`. Accepted edge inputs include
 `EdgeSpec`, named tuples, dictionaries, and tuples of the form
 `(source, target, size=1.0, label=nothing)`.
 """
-function graph(nodes, edges; id=string("sigma-", uuid4()), config=SigmaConfig())
-    SigmaGraph(string(id), _normalize_nodes(nodes), _normalize_edges(edges), config)
+function graph(nodes, edges; id=string("sigma-", uuid4()), config=SigmaConfig(), layout=nothing, layout_kwargs...)
+    normalized_nodes = _normalize_nodes(nodes)
+    normalized_edges = _normalize_edges(edges)
+    SigmaGraph(
+        string(id),
+        _apply_layout(normalized_nodes, normalized_edges, layout; layout_kwargs...),
+        normalized_edges,
+        config,
+    )
 end
 
 """
-    render(nodes, edges; kwargs...)
+    render(nodes, edges; layout=nothing, kwargs...)
 
 Create a `SigmaGraph` with inline rendering configuration.
 
@@ -143,6 +151,7 @@ function render(
     nodes,
     edges;
     id=string("sigma-", uuid4()),
+    layout=nothing,
     width="100%",
     height="700px",
     background="#ffffff",
@@ -153,11 +162,13 @@ function render(
     label_grid_cell_size=80,
     max_node_size=16.0,
     min_node_size=2.0,
+    layout_kwargs...,
 )
     graph(
         nodes,
         edges;
         id=id,
+        layout=layout,
         config=SigmaConfig(
             width=width,
             height=height,
@@ -170,10 +181,62 @@ function render(
             max_node_size=max_node_size,
             min_node_size=min_node_size,
         ),
+        layout_kwargs...,
     )
 end
 
 render(value::SigmaGraph) = value
+
+"""
+    random_layout(nodes; seed=nothing, extent=1.0)
+    random_layout(nodes, edges; seed=nothing, extent=1.0)
+
+Assign random coordinates to each node.
+"""
+function random_layout(nodes; kwargs...)
+    _random_layout(_normalize_nodes(nodes); kwargs...)
+end
+
+function random_layout(nodes, edges; kwargs...)
+    random_layout(nodes; kwargs...)
+end
+
+"""
+    circular_layout(nodes; radius=1.0, start_angle=0.0)
+    circular_layout(nodes, edges; radius=1.0, start_angle=0.0)
+
+Place nodes evenly on a circle in input order.
+"""
+function circular_layout(nodes; kwargs...)
+    _circular_layout(_normalize_nodes(nodes); kwargs...)
+end
+
+function circular_layout(nodes, edges; kwargs...)
+    circular_layout(nodes; kwargs...)
+end
+
+"""
+    grid_layout(nodes; columns=nothing, spacing=1.0)
+    grid_layout(nodes, edges; columns=nothing, spacing=1.0)
+
+Place nodes on a centered rectangular grid.
+"""
+function grid_layout(nodes; kwargs...)
+    _grid_layout(_normalize_nodes(nodes); kwargs...)
+end
+
+function grid_layout(nodes, edges; kwargs...)
+    grid_layout(nodes; kwargs...)
+end
+
+"""
+    spring_layout(nodes, edges; iterations=100, seed=nothing, extent=1.0, gravity=0.05, cooling=0.9)
+
+Compute a lightweight force-directed layout from the graph structure.
+"""
+function spring_layout(nodes, edges; kwargs...)
+    _spring_layout(_normalize_nodes(nodes), _normalize_edges(edges); kwargs...)
+end
 
 """
     savehtml(path, graph::SigmaGraph)
@@ -275,6 +338,187 @@ end
 function _edge(value::Tuple)
     length(value) >= 2 || error("Tuple edges must be (source, target, ...)")
     EdgeSpec(value[1], value[2]; size=length(value) >= 3 ? value[3] : 1.0, label=length(value) >= 4 ? value[4] : nothing)
+end
+
+function _apply_layout(nodes::Vector{NodeSpec}, edges::Vector{EdgeSpec}, layout; layout_kwargs...)
+    isnothing(layout) && return nodes
+    layout_function = _resolve_layout(layout)
+    _normalize_nodes(layout_function(nodes, edges; layout_kwargs...))
+end
+
+function _resolve_layout(layout::Symbol)
+    layout === :random && return random_layout
+    layout === :circular && return circular_layout
+    layout === :grid && return grid_layout
+    layout === :spring && return spring_layout
+    error("Unsupported layout symbol: $(layout)")
+end
+
+_resolve_layout(layout::AbstractString) = _resolve_layout(Symbol(layout))
+_resolve_layout(layout::Function) = layout
+
+function _random_layout(nodes::Vector{NodeSpec}; seed=nothing, extent=1.0)
+    rng = _layout_rng(seed)
+    positioned = Vector{NodeSpec}(undef, length(nodes))
+    for (index, node) in pairs(nodes)
+        positioned[index] = _with_position(
+            node,
+            extent * (2.0 * rand(rng) - 1.0),
+            extent * (2.0 * rand(rng) - 1.0),
+        )
+    end
+    positioned
+end
+
+function _circular_layout(nodes::Vector{NodeSpec}; radius=1.0, start_angle=0.0)
+    count = length(nodes)
+    count == 0 && return NodeSpec[]
+    positioned = Vector{NodeSpec}(undef, count)
+    for (index, node) in pairs(nodes)
+        angle = start_angle + 2pi * (index - 1) / count
+        positioned[index] = _with_position(node, radius * cos(angle), radius * sin(angle))
+    end
+    positioned
+end
+
+function _grid_layout(nodes::Vector{NodeSpec}; columns=nothing, spacing=1.0)
+    count = length(nodes)
+    count == 0 && return NodeSpec[]
+    column_count = isnothing(columns) ? ceil(Int, sqrt(count)) : max(1, Int(columns))
+    row_count = ceil(Int, count / column_count)
+    x_offset = spacing * (column_count - 1) / 2
+    y_offset = spacing * (row_count - 1) / 2
+    positioned = Vector{NodeSpec}(undef, count)
+    for (index, node) in pairs(nodes)
+        slot = index - 1
+        col = slot % column_count
+        row = slot ÷ column_count
+        positioned[index] = _with_position(
+            node,
+            spacing * col - x_offset,
+            y_offset - spacing * row,
+        )
+    end
+    positioned
+end
+
+function _spring_layout(nodes::Vector{NodeSpec}, edges::Vector{EdgeSpec}; iterations=100, seed=nothing, extent=1.0, gravity=0.05, cooling=0.9)
+    count = length(nodes)
+    count == 0 && return NodeSpec[]
+    count == 1 && return [_with_position(only(nodes), 0.0, 0.0)]
+    xs, ys = _initial_positions(nodes; seed=seed, extent=extent)
+    indexed_edges = _edge_indices(nodes, edges)
+    area = max(extent^2, 1.0)
+    optimal_distance = sqrt(area / count)
+    temperature = max(extent, 1.0)
+    disp_x = zeros(Float64, count)
+    disp_y = zeros(Float64, count)
+
+    for _ in 1:max(1, Int(iterations))
+        fill!(disp_x, 0.0)
+        fill!(disp_y, 0.0)
+
+        for i in 1:(count - 1)
+            for j in (i + 1):count
+                dx = xs[i] - xs[j]
+                dy = ys[i] - ys[j]
+                distance = max(sqrt(dx * dx + dy * dy), 1.0e-9)
+                force = optimal_distance^2 / distance
+                fx = dx / distance * force
+                fy = dy / distance * force
+                disp_x[i] += fx
+                disp_y[i] += fy
+                disp_x[j] -= fx
+                disp_y[j] -= fy
+            end
+        end
+
+        for (source, target) in indexed_edges
+            dx = xs[source] - xs[target]
+            dy = ys[source] - ys[target]
+            distance = max(sqrt(dx * dx + dy * dy), 1.0e-9)
+            force = distance^2 / optimal_distance
+            fx = dx / distance * force
+            fy = dy / distance * force
+            disp_x[source] -= fx
+            disp_y[source] -= fy
+            disp_x[target] += fx
+            disp_y[target] += fy
+        end
+
+        for i in 1:count
+            disp_x[i] -= gravity * xs[i]
+            disp_y[i] -= gravity * ys[i]
+            distance = sqrt(disp_x[i]^2 + disp_y[i]^2)
+            if distance > 0.0
+                step = min(distance, temperature)
+                xs[i] += disp_x[i] / distance * step
+                ys[i] += disp_y[i] / distance * step
+            end
+        end
+
+        temperature *= cooling
+    end
+
+    xs, ys = _rescale_positions(xs, ys; extent=extent)
+    [_with_position(node, xs[index], ys[index]) for (index, node) in pairs(nodes)]
+end
+
+function _layout_rng(seed)
+    isnothing(seed) ? Random.default_rng() : MersenneTwister(seed)
+end
+
+function _with_position(node::NodeSpec, x, y)
+    NodeSpec(
+        node.id;
+        x=x,
+        y=y,
+        size=node.size,
+        label=node.label,
+        color=node.color,
+        attributes=copy(node.attributes),
+    )
+end
+
+function _initial_positions(nodes::Vector{NodeSpec}; seed=nothing, extent=1.0)
+    xs = [node.x for node in nodes]
+    ys = [node.y for node in nodes]
+    spread = (maximum(xs) - minimum(xs)) + (maximum(ys) - minimum(ys))
+    if spread > 0.0
+        return xs, ys
+    end
+    positioned = _random_layout(nodes; seed=seed, extent=extent)
+    [node.x for node in positioned], [node.y for node in positioned]
+end
+
+function _edge_indices(nodes::Vector{NodeSpec}, edges::Vector{EdgeSpec})
+    node_index = Dict(node.id => index for (index, node) in pairs(nodes))
+    indexed = Tuple{Int, Int}[]
+    for edge in edges
+        source = get(node_index, edge.source, 0)
+        target = get(node_index, edge.target, 0)
+        source == 0 && continue
+        target == 0 && continue
+        source == target && continue
+        push!(indexed, (source, target))
+    end
+    indexed
+end
+
+function _rescale_positions(xs::Vector{Float64}, ys::Vector{Float64}; extent=1.0)
+    min_x, max_x = extrema(xs)
+    min_y, max_y = extrema(ys)
+    span_x = max_x - min_x
+    span_y = max_y - min_y
+    span = max(span_x, span_y)
+    span == 0.0 && return fill(0.0, length(xs)), fill(0.0, length(ys))
+    x_center = (max_x + min_x) / 2
+    y_center = (max_y + min_y) / 2
+    scale = 2 * extent / span
+    (
+        [(x - x_center) * scale for x in xs],
+        [(y - y_center) * scale for y in ys],
+    )
 end
 
 function _graph_payload(value::SigmaGraph)
