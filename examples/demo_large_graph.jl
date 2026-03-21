@@ -7,8 +7,6 @@ function random_graph(node_count::Integer=10_000, edge_count::Integer=30_000; se
     for i in 1:node_count
         nodes[i] = (
             id=string(i),
-            x=rand(rng),
-            y=rand(rng),
             size=1.0 + 2.0 * rand(rng),
             color=rand(rng, ("#2563eb", "#0891b2", "#059669", "#d97706")),
             label=i <= 250 ? "node-$i" : nothing,
@@ -35,6 +33,8 @@ function random_graph(node_count::Integer=10_000, edge_count::Integer=30_000; se
     render(
         nodes,
         edges;
+        layout=:random,
+        seed=seed,
         height="780px",
         render_edge_labels=false,
         hide_edges_on_move=true,

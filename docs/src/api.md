@@ -6,6 +6,10 @@ NodeSpec
 EdgeSpec
 SigmaConfig
 SigmaGraph
+random_layout
+circular_layout
+grid_layout
+spring_layout
 graph
 render
 savehtml
@@ -63,20 +67,62 @@ is the object displayed by notebooks and accepted by `savehtml`.
 ### `graph`
 
 ```julia
-graph(nodes, edges; id="sigma-...", config=SigmaConfig())
+graph(nodes, edges; id="sigma-...", config=SigmaConfig(), layout=nothing, layout_kwargs...)
 ```
 
 Normalizes supported node and edge inputs into a `SigmaGraph`.
 
+When `layout` is provided, the layout is applied before the graph is wrapped in
+`SigmaGraph`. Built-in layouts may be selected with `:random`, `:circular`,
+`:grid`, or `:spring`.
+
 ### `render`
 
 ```julia
-render(nodes, edges; kwargs...)
+render(nodes, edges; layout=nothing, kwargs..., layout_kwargs...)
 render(graph::SigmaGraph)
 ```
 
 Convenience constructor for notebook display. The `SigmaGraph` method is a
 pass-through for code paths that already hold a normalized graph.
+
+### `random_layout`
+
+```julia
+random_layout(nodes; seed=nothing, extent=1.0)
+random_layout(nodes, edges; seed=nothing, extent=1.0)
+```
+
+Returns positioned `NodeSpec` values with random coordinates in
+`[-extent, extent]`.
+
+### `circular_layout`
+
+```julia
+circular_layout(nodes; radius=1.0, start_angle=0.0)
+circular_layout(nodes, edges; radius=1.0, start_angle=0.0)
+```
+
+Returns positioned `NodeSpec` values placed evenly around a circle in input
+order.
+
+### `grid_layout`
+
+```julia
+grid_layout(nodes; columns=nothing, spacing=1.0)
+grid_layout(nodes, edges; columns=nothing, spacing=1.0)
+```
+
+Returns positioned `NodeSpec` values on a centered rectangular grid.
+
+### `spring_layout`
+
+```julia
+spring_layout(nodes, edges; iterations=100, seed=nothing, extent=1.0, gravity=0.05, cooling=0.9)
+```
+
+Returns positioned `NodeSpec` values from a lightweight force-directed layout.
+This is the only built-in layout that uses edge structure.
 
 ### `savehtml`
 
@@ -98,3 +144,15 @@ For `graph` and `render`, nodes and edges may be supplied as:
 - positional tuples for compact examples
 
 The package converts these inputs into a consistent `SigmaGraph` before HTML generation.
+
+## Layout Callables
+
+For `graph(...; layout=...)` and `render(...; layout=...)`, `layout` may also be
+a callable of the form:
+
+```julia
+(nodes, edges; kwargs...) -> positioned_nodes
+```
+
+The callable receives normalized `NodeSpec` and `EdgeSpec` vectors and should
+return any supported node collection with `x` and `y` coordinates.

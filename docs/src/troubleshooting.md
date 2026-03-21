@@ -18,10 +18,19 @@ viewing or restrictive network policies can prevent the graph from rendering.
 
 ## Graph quality issues
 
-This package does not compute graph layouts. If nodes overlap or cluster poorly,
-improve the input coordinates before rendering.
+Try one of the built-in layouts first:
+
+- `layout=:random` for a quick spread
+- `layout=:circular` for small ordered graphs
+- `layout=:grid` for regular overviews
+- `layout=:spring` for structure-aware layouts on smaller graphs
+
+If the result is still poor, provide explicit coordinates or a custom layout
+callable before rendering.
 
 ## Large-graph performance
 
 Browser memory and GPU performance remain the main limits. Reducing labels and
 keeping node sizes modest usually helps more than increasing canvas size.
+`spring_layout` also has a quadratic repulsion step, so it scales much worse
+than the other built-in layouts.

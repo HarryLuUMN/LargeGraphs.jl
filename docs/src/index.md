@@ -2,23 +2,34 @@
 
 `LargeGraphsJL` renders interactive Sigma.js graph views from plain Julia data.
 It is designed for notebook-first exploration with the option to export
-standalone HTML snapshots.
+standalone HTML snapshots, and it now includes a small batch of built-in layout
+algorithms for basic graph drawing.
 
 ## Scope
 
 This package is intentionally small:
 
 - normalize node and edge inputs into a stable internal form
+- compute lightweight random, circular, grid, and spring layouts
 - render HTML suitable for IJulia and Jupyter display
 - export a standalone HTML document for sharing outside the notebook
 
-It does not attempt to be a graph algorithms package or a layout engine.
+It does not attempt to be a full graph algorithms package or a heavy-duty
+layout engine.
 
 ## Start Here
 
 - Use [API reference](api.md) for constructor and function details.
 - Use [Notebook guide](notebooks.md) for IJulia and Jupyter workflows.
 - Use [Troubleshooting](troubleshooting.md) when rendering does not behave as expected.
+
+## Layout Entry Points
+
+- Call `random_layout`, `circular_layout`, `grid_layout`, or `spring_layout`
+  directly when you want explicit positioned nodes.
+- Pass `layout=:random`, `:circular`, `:grid`, or `:spring` to `graph(...)` or
+  `render(...)` when you want layout as a convenience.
+- Pass a custom callable to `layout=` when the built-in layouts are not enough.
 
 ## Local Docs Build
 

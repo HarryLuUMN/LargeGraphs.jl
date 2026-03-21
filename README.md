@@ -2,8 +2,9 @@
 
 `LargeGraphsJL` is a small Julia package for rendering interactive graph
 visualizations with [Sigma.js](https://www.sigmajs.org/) in IJulia and Jupyter
-notebooks. It accepts plain Julia collections, produces notebook-friendly HTML,
-and can export standalone HTML files for sharing outside Julia.
+notebooks. It accepts plain Julia collections, includes a lightweight batch of
+classic layout algorithms, produces notebook-friendly HTML, and can export
+standalone HTML files for sharing outside Julia.
 
 ## Why this package
 
@@ -48,9 +49,9 @@ from the terminal.
 using LargeGraphsJL
 
 nodes = [
-    (id="a", x=0.0, y=0.0, size=3.0, label="A", color="#2563eb"),
-    (id="b", x=1.0, y=1.0, size=2.5, label="B", color="#059669"),
-    (id="c", x=1.3, y=0.1, size=2.0, label="C", color="#d97706"),
+    (id="a", size=3.0, label="A", color="#2563eb"),
+    (id="b", size=2.5, label="B", color="#059669"),
+    (id="c", size=2.0, label="C", color="#d97706"),
 ]
 
 edges = [
@@ -61,6 +62,9 @@ edges = [
 viz = render(
     nodes,
     edges;
+    layout=:spring,
+    iterations=80,
+    seed=7,
     height="520px",
     background="#f8fafc",
     hide_edges_on_move=true,
@@ -105,10 +109,35 @@ usually show up there immediately.
 
 ### Main functions
 
-- `graph(nodes, edges; id, config)` normalizes graph data into a `SigmaGraph`.
-- `render(nodes, edges; kwargs...)` builds a `SigmaGraph` with inline render options.
+- `graph(nodes, edges; id, config, layout=nothing, layout_kwargs...)` normalizes graph data into a `SigmaGraph`.
+- `render(nodes, edges; layout=nothing, kwargs..., layout_kwargs...)` builds a `SigmaGraph` with inline render options.
 - `savehtml(path, graph)` writes a standalone HTML file.
 - `savehtml(path, nodes, edges; kwargs...)` combines rendering and export in one call.
+- `random_layout(nodes; seed, extent)` assigns random coordinates.
+- `circular_layout(nodes; radius, start_angle)` places nodes on a circle.
+- `grid_layout(nodes; columns, spacing)` places nodes on a centered grid.
+- `spring_layout(nodes, edges; iterations, seed, extent, gravity, cooling)` runs a lightweight force-directed layout.
+
+### Layout usage
+
+You can call a layout function directly when you want explicit positioned nodes:
+
+```julia
+positioned_nodes = circular_layout(nodes; radius=2.5)
+viz = render(positioned_nodes, edges; height="520px")
+```
+
+Or you can let `render` apply the layout for you:
+
+```julia
+viz = render(nodes, edges; layout=:spring, iterations=100, seed=3)
+```
+
+`layout` accepts:
+
+- symbols: `:random`, `:circular`, `:grid`, `:spring`
+- strings with the same names
+- a custom callable of the form `(nodes, edges; kwargs...) -> positioned_nodes`
 
 ### Accepted input forms
 
@@ -135,6 +164,8 @@ savehtml(
     "report-graph.html",
     nodes,
     edges;
+    layout=:grid,
+    columns=4,
     width="100%",
     height="720px",
     background="#ffffff",
@@ -156,6 +187,19 @@ edges = [
 ]
 
 display(render(nodes, edges; render_edge_labels=false))
+```
+
+### Use a custom layout function
+
+```julia
+function diagonal_layout(nodes, edges; gap=1.0)
+    [
+        NodeSpec(node.id; x=index * gap, y=-index * gap, size=node.size, label=node.label, color=node.color, attributes=node.attributes)
+        for (index, node) in pairs(nodes)
+    ]
+end
+
+display(render(nodes, edges; layout=diagonal_layout, gap=0.75))
 ```
 
 ## Troubleshooting
@@ -180,14 +224,16 @@ bootstrapping.
 ### Large graphs feel slow
 
 Reduce labels, lower node sizes, and enable `hide_edges_on_move=true`. The demo
-script uses these settings for a reason.
+script uses these settings for a reason. For layouts, `spring_layout` is the
+most expensive option because it does iterative force simulation.
 
 ## Limitations
 
 - This package currently targets notebook and HTML export workflows, not native GUI rendering.
 - The frontend depends on CDN-hosted Sigma.js and Graphology modules.
-- The package expects caller-supplied coordinates; it does not compute layouts.
+- The package includes lightweight layouts, not a full graph drawing toolkit.
 - Validation of duplicate node IDs or missing referenced nodes is delegated to the browser-side graph construction path.
+- `spring_layout` uses an `O(iterations * (n^2 + m))` force simulation, so it is not intended for very large graphs.
 - Very large graphs still depend on browser memory and WebGL performance.
 
 ## Documentation

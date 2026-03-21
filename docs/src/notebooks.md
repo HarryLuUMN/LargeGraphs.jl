@@ -22,11 +22,19 @@ using LargeGraphsJL
 Any `SigmaGraph` value renders as HTML in the notebook output area:
 
 ```julia
-viz = render(nodes, edges; height="600px", hide_edges_on_move=true)
+viz = render(nodes, edges; layout=:spring, iterations=80, seed=7, height="600px", hide_edges_on_move=true)
 display(viz)
 ```
 
 Evaluating `viz` as the last expression in a cell also works.
+
+If you want to inspect or reuse node coordinates before rendering, call a
+layout directly:
+
+```julia
+positioned_nodes = grid_layout(nodes; columns=4, spacing=1.2)
+viz = render(positioned_nodes, edges; height="600px")
+```
 
 ## Demos in This Repository
 
@@ -37,4 +45,5 @@ Evaluating `viz` as the last expression in a cell also works.
 
 - Keep labels sparse for large graphs.
 - Use `hide_edges_on_move=true` when panning feels sluggish.
+- Use `:random`, `:circular`, or `:grid` for large graphs; `:spring` is more expensive.
 - Save a standalone HTML copy when you need to share results with someone outside Julia.
