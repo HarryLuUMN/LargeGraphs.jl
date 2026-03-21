@@ -6,6 +6,7 @@ with notebook-friendly HTML output and standalone HTML export.
 """
 module LargeGraphs
 
+using Graphs
 using JSON3
 using LinearAlgebra
 using Random

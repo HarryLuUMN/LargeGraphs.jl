@@ -10,6 +10,7 @@ algorithms for basic graph drawing.
 This package is intentionally small:
 
 - normalize node and edge inputs into a stable internal form
+- accept `Graphs.jl` graph objects through the same rendering pipeline
 - compute lightweight random, circular, grid, spectral, tree, and force-directed layouts
 - render HTML suitable for IJulia and Jupyter display
 - export a standalone HTML document for sharing outside the notebook

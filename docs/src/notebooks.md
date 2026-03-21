@@ -28,6 +28,19 @@ display(viz)
 
 Evaluating `viz` as the last expression in a cell also works.
 
+If you already have a `Graphs.jl` graph, you can render it directly:
+
+```julia
+using Graphs
+
+g = wheel_graph(8)
+viz = render(
+    g;
+    layout=:circular,
+    node_mapper=v -> (id="v$v", label="v$v", size=v == 1 ? 3.0 : 1.6),
+)
+```
+
 If you want to inspect or reuse node coordinates before rendering, call a
 layout directly:
 
@@ -40,6 +53,7 @@ viz = render(positioned_nodes, edges; height="600px")
 
 - `examples/demo_notebook.ipynb` shows notebook rendering workflows and large-graph viewing.
 - `examples/demo_layout_functions.ipynb` shows direct layout functions returning positioned nodes.
+- `examples/demo_graphsjl.ipynb` shows the `Graphs.jl` input workflow.
 - `examples/demo_large_graph.jl` generates the same style of output from a script and writes HTML to disk.
 
 ## Practical Advice

@@ -71,6 +71,7 @@ is the object displayed by notebooks and accepted by `savehtml`.
 
 ```julia
 graph(nodes, edges; id="sigma-...", config=SigmaConfig(), layout=nothing, layout_kwargs...)
+graph(g::Graphs.AbstractGraph; id="sigma-...", config=SigmaConfig(), layout=nothing, node_mapper=..., edge_mapper=..., layout_kwargs...)
 ```
 
 Normalizes supported node and edge inputs into a `SigmaGraph`.
@@ -79,10 +80,15 @@ When `layout` is provided, the layout is applied before the graph is wrapped in
 `SigmaGraph`. Built-in layouts may be selected with `:random`, `:circular`,
 `:grid`, `:spectral`, `:tree`, `:spring`, or `:force_directed`.
 
+`Graphs.jl` graphs are also supported directly. In that mode, `node_mapper`
+receives each vertex and `edge_mapper` receives each edge. Both mappers can
+return any supported node or edge input form.
+
 ### `render`
 
 ```julia
 render(nodes, edges; layout=nothing, kwargs..., layout_kwargs...)
+render(g::Graphs.AbstractGraph; layout=nothing, node_mapper=..., edge_mapper=..., kwargs..., layout_kwargs...)
 render(graph::SigmaGraph)
 ```
 
@@ -180,6 +186,7 @@ For `graph` and `render`, nodes and edges may be supplied as:
 - named tuples
 - dictionaries with symbol or string keys
 - positional tuples for compact examples
+- `Graphs.jl` graph objects via the dedicated method overloads
 
 The package converts these inputs into a consistent `SigmaGraph` before HTML generation.
 

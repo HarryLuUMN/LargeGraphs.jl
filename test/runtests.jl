@@ -1,5 +1,6 @@
 using Test
 using LargeGraphs
+using Graphs
 
 @testset "LargeGraphs" begin
     positioned_nodes = [
@@ -147,6 +148,35 @@ using LargeGraphs
     ], shift=3.0)
     @test [node.x for node in custom_viz.nodes] == [4.0, 5.0, 6.0, 7.0]
     @test [node.y for node in custom_viz.nodes] == [-1.0, -2.0, -3.0, -4.0]
+
+    graph_input = SimpleGraph(4)
+    add_edge!(graph_input, 1, 2)
+    add_edge!(graph_input, 2, 3)
+    add_edge!(graph_input, 3, 4)
+
+    graph_viz = render(graph_input; layout=:circular)
+    @test graph_viz isa SigmaGraph
+    @test [node.id for node in graph_viz.nodes] == ["1", "2", "3", "4"]
+    @test Set((edge.source, edge.target) for edge in graph_viz.edges) == Set([("1", "2"), ("2", "3"), ("3", "4")])
+
+    mapped_graph = graph(
+        graph_input;
+        node_mapper=vertex -> (id="v$(vertex)", label="Node $(vertex)", size=vertex + 0.5, color=vertex % 2 == 0 ? "#2563eb" : "#059669"),
+        edge_mapper=edge -> (source="v$(src(edge))", target="v$(dst(edge))", size=0.4, color="#94a3b8", label="$(src(edge))->$(dst(edge))"),
+        layout=:grid,
+        columns=2,
+    )
+    @test mapped_graph isa SigmaGraph
+    @test [node.id for node in mapped_graph.nodes] == ["v1", "v2", "v3", "v4"]
+    @test mapped_graph.nodes[2].label == "Node 2"
+    @test mapped_graph.nodes[4].size == 4.5
+    @test all(edge.label !== nothing for edge in mapped_graph.edges)
+    @test Set((node.x, node.y) for node in mapped_graph.nodes) == Set([
+        (-0.5, 0.5),
+        (0.5, 0.5),
+        (-0.5, -0.5),
+        (0.5, -0.5),
+    ])
 
     @test_throws "Unsupported force-directed algorithm" force_directed_layout(layout_nodes, edges; algorithm=:unknown)
     @test_throws "Unsupported tree layout algorithm" tree_layout(tree_nodes, tree_edges; algorithm=:unknown)

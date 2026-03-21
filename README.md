@@ -3,13 +3,15 @@
 `LargeGraphs` is a small Julia package for rendering interactive graph
 visualizations with [Sigma.js](https://www.sigmajs.org/) in IJulia and Jupyter
 notebooks. It accepts plain Julia collections, includes a lightweight batch of
-classic layout algorithms, produces notebook-friendly HTML, and can export
-standalone HTML files for sharing outside Julia.
+classic layout algorithms, accepts `Graphs.jl` graph objects, produces
+notebook-friendly HTML, and can export standalone HTML files for sharing
+outside Julia.
 
 ## Why this package
 
 - Targets notebook workflows where fast visual inspection matters.
 - Accepts lightweight Julia data structures instead of requiring a graph type.
+- Also works directly with `Graphs.jl` when a project already uses the Julia graph ecosystem.
 - Keeps the package surface small enough to understand quickly.
 - Supports standalone HTML export for demos and reports.
 
@@ -42,6 +44,25 @@ Pkg.add("IJulia")
 If the package is installed in one environment and the notebook kernel points
 at another, `using LargeGraphs` will fail inside the notebook even if it works
 from the terminal.
+
+### Graphs.jl integration
+
+`LargeGraphs` depends on [`Graphs.jl`](https://github.com/JuliaGraphs/Graphs.jl)
+and can render graph objects directly:
+
+```julia
+using Graphs
+using LargeGraphs
+
+g = path_graph(6)
+
+viz = render(
+    g;
+    layout=:circular,
+    node_mapper=v -> (id="v$v", label="Node $v", size=1.5),
+    edge_mapper=e -> (source="v$(src(e))", target="v$(dst(e))", color="#94a3b8"),
+)
+```
 
 ## Quick Start
 
@@ -112,7 +133,9 @@ usually show up there immediately.
 ### Main functions
 
 - `graph(nodes, edges; id, config, layout=nothing, layout_kwargs...)` normalizes graph data into a `SigmaGraph`.
+- `graph(g::Graphs.AbstractGraph; id, config, layout=nothing, node_mapper, edge_mapper, layout_kwargs...)` normalizes a `Graphs.jl` graph into a `SigmaGraph`.
 - `render(nodes, edges; layout=nothing, kwargs..., layout_kwargs...)` builds a `SigmaGraph` with inline render options.
+- `render(g::Graphs.AbstractGraph; layout=nothing, node_mapper, edge_mapper, kwargs..., layout_kwargs...)` renders a `Graphs.jl` graph directly.
 - `savehtml(path, graph)` writes a standalone HTML file.
 - `savehtml(path, nodes, edges; kwargs...)` combines rendering and export in one call.
 - `random_layout(nodes; seed, extent)` assigns random coordinates.
@@ -173,6 +196,10 @@ Edges can be provided as:
 - named tuples such as `(source="a", target="b", size=0.8)`
 - dictionaries with string or symbol keys
 - tuples of the form `(source, target, size=1.0, label=nothing)`
+
+You can also pass a `Graphs.jl` graph object directly to `graph(...)` or `render(...)`.
+Use `node_mapper` and `edge_mapper` when you want labels, sizes, colors, or
+extra attributes derived from graph vertices and edges.
 
 ## Examples
 
