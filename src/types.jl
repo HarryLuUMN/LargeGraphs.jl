@@ -65,7 +65,10 @@ struct SigmaGraph
     nodes::Vector{NodeSpec}
     edges::Vector{EdgeSpec}
     config::SigmaConfig
+    interaction::Dict{String, Any}
 end
+
+SigmaGraph(id, nodes, edges, config) = SigmaGraph(string(id), nodes, edges, config, Dict{String, Any}())
 
 NodeSpec(id; x=0.0, y=0.0, size=1.0, label=nothing, color=nothing, attributes=Dict{String, Any}()) =
     NodeSpec(string(id), Float64(x), Float64(y), Float64(size), _string_or_nothing(label), _string_or_nothing(color), Dict{String, Any}(string(k) => v for (k, v) in pairs(attributes)))

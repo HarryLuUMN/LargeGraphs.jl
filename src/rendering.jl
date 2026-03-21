@@ -29,6 +29,7 @@ function _graph_payload(value::SigmaGraph)
         nodes=[_node_payload(node) for node in value.nodes],
         edges=[_edge_payload(edge) for edge in value.edges],
         config=_config_payload(value.config),
+        interaction=value.interaction,
     )
 end
 

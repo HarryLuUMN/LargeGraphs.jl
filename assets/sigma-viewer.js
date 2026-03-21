@@ -52,6 +52,19 @@
       }
       root.__largeGraphsJlSigma = null;
     }
+
+    if (root.__largeGraphsJlComm) {
+      try {
+        if (typeof root.__largeGraphsJlComm.send === "function") {
+          root.__largeGraphsJlComm.send(interactionDetail(root, "disconnected", null));
+        }
+        if (typeof root.__largeGraphsJlComm.close === "function") {
+          root.__largeGraphsJlComm.close();
+        }
+      } catch (_error) {
+      }
+      root.__largeGraphsJlComm = null;
+    }
   }
 
   function ensureControls(root) {
@@ -515,6 +528,292 @@
     return loader;
   }
 
+  function interactionConfig(root) {
+    return root && root.__largeGraphsJlInteraction ? root.__largeGraphsJlInteraction : {};
+  }
+
+  function interactionEnabled(root, key, fallback) {
+    const interaction = interactionConfig(root);
+    if (Object.prototype.hasOwnProperty.call(interaction, key)) {
+      return Boolean(interaction[key]);
+    }
+    return fallback;
+  }
+
+  function ensureTooltip(root) {
+    if (!root) {
+      return null;
+    }
+
+    if (root.__largeGraphsJlTooltip && root.__largeGraphsJlTooltip.isConnected) {
+      return root.__largeGraphsJlTooltip;
+    }
+
+    const tooltip = document.createElement("div");
+    tooltip.style.cssText = "position:absolute;left:0;top:0;z-index:6;display:none;max-width:260px;padding:10px 12px;border:1px solid rgba(148,163,184,0.24);border-radius:14px;background:rgba(15,23,42,0.92);box-shadow:0 18px 40px rgba(15,23,42,0.24);backdrop-filter:blur(10px);font:500 12px/1.4 ui-sans-serif,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#e2e8f0;pointer-events:none;";
+    root.appendChild(tooltip);
+    root.__largeGraphsJlTooltip = tooltip;
+    return tooltip;
+  }
+
+  function hideTooltip(root) {
+    const tooltip = root && root.__largeGraphsJlTooltip;
+    if (!tooltip) {
+      return;
+    }
+    tooltip.style.display = "none";
+  }
+
+  function escapeHtml(value) {
+    return String(value)
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#39;");
+  }
+
+  function nodeRecord(root, nodeId) {
+    const nodes = root && root.__largeGraphsJlNodesById;
+    if (!nodes) {
+      return null;
+    }
+    return nodes.get(String(nodeId)) || null;
+  }
+
+  function nodeNeighbors(root, nodeId) {
+    const neighborhoods = root && root.__largeGraphsJlNeighborhoods;
+    if (!neighborhoods) {
+      return [];
+    }
+    const neighbors = neighborhoods.get(String(nodeId));
+    return neighbors ? Array.from(neighbors) : [];
+  }
+
+  function showTooltip(root, nodeId, pointer) {
+    if (!interactionEnabled(root, "enableTooltips", true)) {
+      return;
+    }
+
+    const tooltip = ensureTooltip(root);
+    const node = nodeRecord(root, nodeId);
+    if (!tooltip || !node) {
+      return;
+    }
+
+    const neighbors = nodeNeighbors(root, nodeId);
+    const title = node.label || node.id;
+    const subtitle = node.label && node.label !== node.id ? String(node.id) : null;
+    tooltip.innerHTML = [
+      `<div style="font:600 13px/1.3 ui-sans-serif,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#f8fafc;">${escapeHtml(title)}</div>`,
+      subtitle ? `<div style="margin-top:2px;color:#94a3b8;">${escapeHtml(subtitle)}</div>` : "",
+      `<div style="margin-top:6px;color:#cbd5e1;">Neighbors: ${neighbors.length}</div>`,
+    ].join("");
+
+    const bounds = root.getBoundingClientRect();
+    const tooltipX = Math.max(12, Math.min(bounds.width - 220, (pointer?.x ?? bounds.width / 2) + 16));
+    const tooltipY = Math.max(12, Math.min(bounds.height - 88, (pointer?.y ?? bounds.height / 2) + 16));
+    tooltip.style.transform = `translate(${tooltipX}px, ${tooltipY}px)`;
+    tooltip.style.display = "block";
+  }
+
+  function dimmedNodeColor(node) {
+    return node.color ? "rgba(148,163,184,0.24)" : "rgba(148,163,184,0.26)";
+  }
+
+  function dimmedEdgeColor(edge) {
+    return edge.color ? "rgba(148,163,184,0.16)" : "rgba(148,163,184,0.14)";
+  }
+
+  function resetInteractionState(root) {
+    root.__largeGraphsJlSelectedNode = null;
+    root.__largeGraphsJlSelectedNeighbors = new Set();
+    root.__largeGraphsJlHoveredNode = null;
+    hideTooltip(root);
+  }
+
+  function updateHighlight(root, nodeId) {
+    const selectedNode = nodeId ? String(nodeId) : null;
+    root.__largeGraphsJlSelectedNode = selectedNode;
+    root.__largeGraphsJlSelectedNeighbors = new Set(selectedNode ? nodeNeighbors(root, selectedNode) : []);
+
+    const sigma = root.__largeGraphsJlSigma;
+    if (!sigma) {
+      return;
+    }
+
+    if (!selectedNode || !interactionEnabled(root, "highlightNeighbors", true)) {
+      sigma.setSetting("nodeReducer", null);
+      sigma.setSetting("edgeReducer", null);
+      sigma.refresh();
+      return;
+    }
+
+    const selectedNeighbors = root.__largeGraphsJlSelectedNeighbors;
+    sigma.setSetting("nodeReducer", function (id, attrs) {
+      const nodeIdString = String(id);
+      if (nodeIdString === selectedNode) {
+        return Object.assign({}, attrs, { highlighted: true, forceLabel: true, zIndex: 1_000 });
+      }
+      if (selectedNeighbors.has(nodeIdString)) {
+        return Object.assign({}, attrs, { highlighted: true, zIndex: 900 });
+      }
+      return Object.assign({}, attrs, {
+        color: dimmedNodeColor(attrs),
+        label: null,
+        zIndex: 1,
+      });
+    });
+    sigma.setSetting("edgeReducer", function (edgeKey, attrs) {
+      const source = String(attrs.source);
+      const target = String(attrs.target);
+      const isIncident = source === selectedNode || target === selectedNode;
+      return isIncident ? Object.assign({}, attrs, { zIndex: 800, size: Math.max(1.2, Number(attrs.size) || 1) }) : Object.assign({}, attrs, { color: dimmedEdgeColor(attrs), hidden: true });
+    });
+    sigma.refresh();
+  }
+
+  function dispatchInteractionEvent(root, detail) {
+    if (!root) {
+      return;
+    }
+    root.dispatchEvent(new CustomEvent("largegraphs:interaction", { detail }));
+
+    const comm = root.__largeGraphsJlComm;
+    if (comm && typeof comm.send === "function") {
+      try {
+        comm.send(detail);
+      } catch (_error) {
+      }
+    }
+  }
+
+  function interactionDetail(root, eventType, nodeId) {
+    return {
+      eventType,
+      nodeId: nodeId ? String(nodeId) : null,
+      neighborIds: nodeId ? nodeNeighbors(root, nodeId) : [],
+      rootId: root.id,
+      sessionId: interactionConfig(root).bridge?.sessionId || null,
+      timestamp: Date.now() / 1000,
+    };
+  }
+
+  function findCommManager() {
+    const classic = window.Jupyter && window.Jupyter.notebook && window.Jupyter.notebook.kernel;
+    if (classic && classic.comm_manager && typeof classic.comm_manager.new_comm === "function") {
+      return classic.comm_manager;
+    }
+
+    const ipython = window.IPython && window.IPython.notebook && window.IPython.notebook.kernel;
+    if (ipython && ipython.comm_manager && typeof ipython.comm_manager.new_comm === "function") {
+      return ipython.comm_manager;
+    }
+
+    return null;
+  }
+
+  function ensureInteractionBridge(root) {
+    const interaction = interactionConfig(root);
+    const bridge = interaction.bridge;
+    if (!bridge || root.__largeGraphsJlComm) {
+      return;
+    }
+
+    const manager = findCommManager();
+    if (!manager) {
+      return;
+    }
+
+    try {
+      const comm = manager.new_comm(bridge.targetName, {
+        sessionId: bridge.sessionId,
+        rootId: root.id,
+      });
+      root.__largeGraphsJlComm = comm;
+      if (comm && typeof comm.send === "function") {
+        comm.send(interactionDetail(root, "connected", null));
+      }
+    } catch (_error) {
+    }
+  }
+
+  function buildNeighborhoods(payload) {
+    const neighborhoods = new Map();
+    const nodesById = new Map();
+    const nodes = Array.isArray(payload.nodes) ? payload.nodes : [];
+    const edges = Array.isArray(payload.edges) ? payload.edges : [];
+
+    for (const node of nodes) {
+      const id = String(node.id);
+      nodesById.set(id, node);
+      neighborhoods.set(id, new Set());
+    }
+
+    for (const edge of edges) {
+      const source = String(edge.source);
+      const target = String(edge.target);
+      if (!neighborhoods.has(source)) {
+        neighborhoods.set(source, new Set());
+      }
+      if (!neighborhoods.has(target)) {
+        neighborhoods.set(target, new Set());
+      }
+      neighborhoods.get(source).add(target);
+      neighborhoods.get(target).add(source);
+    }
+
+    return { neighborhoods, nodesById };
+  }
+
+  function installInteractionHandlers(root, sigma) {
+    if (!root || !sigma) {
+      return;
+    }
+
+    ensureInteractionBridge(root);
+    resetInteractionState(root);
+
+    sigma.on("enterNode", function (event) {
+      const nodeId = event.node;
+      root.__largeGraphsJlHoveredNode = String(nodeId);
+      showTooltip(root, nodeId, event.event);
+      dispatchInteractionEvent(root, interactionDetail(root, "hover", nodeId));
+    });
+
+    sigma.on("leaveNode", function (event) {
+      root.__largeGraphsJlHoveredNode = null;
+      hideTooltip(root);
+      dispatchInteractionEvent(root, interactionDetail(root, "leave", event.node));
+    });
+
+    sigma.on("clickNode", function (event) {
+      if (!interactionEnabled(root, "enableSelection", true)) {
+        return;
+      }
+
+      const nodeId = String(event.node);
+      const nextSelected = root.__largeGraphsJlSelectedNode === nodeId ? null : nodeId;
+      updateHighlight(root, nextSelected);
+      if (nextSelected) {
+        showTooltip(root, nextSelected, event.event);
+        dispatchInteractionEvent(root, interactionDetail(root, "select", nextSelected));
+      } else {
+        hideTooltip(root);
+        dispatchInteractionEvent(root, interactionDetail(root, "clear_selection", null));
+      }
+    });
+
+    sigma.on("clickStage", function () {
+      if (!interactionEnabled(root, "enableSelection", true)) {
+        return;
+      }
+      updateHighlight(root, null);
+      hideTooltip(root);
+      dispatchInteractionEvent(root, interactionDetail(root, "clear_selection", null));
+    });
+  }
+
   async function render(rootId) {
     const root = document.getElementById(rootId);
     const payloadNode = document.getElementById(rootId + "-payload");
@@ -546,6 +845,10 @@
 
     try {
       const payload = JSON.parse(payloadNode.textContent || "{}");
+      root.__largeGraphsJlInteraction = payload.interaction || {};
+      const interactionData = buildNeighborhoods(payload);
+      root.__largeGraphsJlNeighborhoods = interactionData.neighborhoods;
+      root.__largeGraphsJlNodesById = interactionData.nodesById;
       const { graphology, Sigma } = await loadModules();
       if (!root.isConnected || root.__largeGraphsJlRenderToken !== renderToken) {
         return null;
@@ -582,6 +885,7 @@
       installCleanup(root);
       rememberActiveRoot(root);
       enforceActiveLimit(root);
+      installInteractionHandlers(root, sigma);
       applyCameraLock(root);
       updateControls(root);
       return sigma;

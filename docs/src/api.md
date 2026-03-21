@@ -4,6 +4,8 @@
 LargeGraphs
 NodeSpec
 EdgeSpec
+GraphEvent
+InteractionState
 SigmaConfig
 SigmaGraph
 random_layout
@@ -16,6 +18,11 @@ force_directed_layout
 graph
 render
 savehtml
+selected_node
+hovered_node
+selected_neighbors
+interaction_events
+clear!
 ```
 
 ## Public Types
@@ -65,6 +72,22 @@ Controls the HTML container and the Sigma.js viewer settings exposed by the pack
 Normalized package object containing graph data and rendering configuration. This
 is the object displayed by notebooks and accepted by `savehtml`.
 
+### `GraphEvent`
+
+Represents one interaction event emitted by the notebook viewer. Each event
+stores:
+
+- `event_type`
+- `node_id`
+- `neighbor_ids`
+- `timestamp`
+
+### `InteractionState`
+
+Mutable notebook interaction state container. Pass it to `render(...; interaction_state=state)`
+or `graph(...; interaction_state=state)` when you want Julia to receive hover
+and selection updates through IJulia comms.
+
 ## Public Functions
 
 ### `graph`
@@ -84,6 +107,13 @@ When `layout` is provided, the layout is applied before the graph is wrapped in
 receives each vertex and `edge_mapper` receives each edge. Both mappers can
 return any supported node or edge input form.
 
+Both `graph` methods also accept:
+
+- `interaction_state`
+- `enable_selection`
+- `enable_tooltips`
+- `highlight_neighbors`
+
 ### `render`
 
 ```julia
@@ -94,6 +124,21 @@ render(graph::SigmaGraph)
 
 Convenience constructor for notebook display. The `SigmaGraph` method is a
 pass-through for code paths that already hold a normalized graph.
+
+When `interaction_state` is provided, notebook interactions update that state
+in Julia if the graph is displayed through IJulia.
+
+### Interaction helpers
+
+```julia
+selected_node(state::InteractionState)
+hovered_node(state::InteractionState)
+selected_neighbors(state::InteractionState)
+interaction_events(state::InteractionState)
+clear!(state::InteractionState)
+```
+
+These helpers inspect or reset the Julia-side interaction state.
 
 ### `random_layout`
 

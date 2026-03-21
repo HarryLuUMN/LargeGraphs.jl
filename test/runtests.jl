@@ -1,6 +1,7 @@
 using Test
 using LargeGraphs
 using Graphs
+using IJulia
 
 @testset "LargeGraphs" begin
     positioned_nodes = [
@@ -178,6 +179,44 @@ using Graphs
         (0.5, -0.5),
     ])
 
+    interaction_state = InteractionState()
+    @test selected_node(interaction_state) === nothing
+    @test hovered_node(interaction_state) === nothing
+    @test isempty(selected_neighbors(interaction_state))
+    @test isempty(interaction_events(interaction_state))
+    @test interaction_state.connected == false
+
+    bridge = LargeGraphs._interaction_bridge(interaction_state)
+    @test bridge["targetName"] == "largegraphs_events"
+    @test bridge["sessionId"] == interaction_state.id
+
+    LargeGraphs._apply_interaction_event!(interaction_state, Dict("eventType" => "connected", "timestamp" => 1.0))
+    @test interaction_state.connected == true
+
+    LargeGraphs._apply_interaction_event!(interaction_state, Dict("eventType" => "hover", "nodeId" => "b", "neighborIds" => ["a", "c"], "timestamp" => 2.0))
+    @test hovered_node(interaction_state) == "b"
+    @test interaction_events(interaction_state)[end].event_type == :hover
+
+    LargeGraphs._apply_interaction_event!(interaction_state, Dict("eventType" => "select", "nodeId" => "b", "neighborIds" => ["a", "c"], "timestamp" => 3.0))
+    @test selected_node(interaction_state) == "b"
+    @test selected_neighbors(interaction_state) == ["a", "c"]
+
+    LargeGraphs._apply_interaction_event!(interaction_state, Dict("eventType" => "leave", "nodeId" => "b", "timestamp" => 4.0))
+    @test hovered_node(interaction_state) === nothing
+
+    LargeGraphs._apply_interaction_event!(interaction_state, Dict("eventType" => "clear_selection", "timestamp" => 5.0))
+    @test selected_node(interaction_state) === nothing
+    @test isempty(selected_neighbors(interaction_state))
+
+    clear!(interaction_state)
+    @test isempty(interaction_events(interaction_state))
+
+    interactive_viz = render(layout_nodes, edges; interaction_state=InteractionState(), layout=:grid, columns=2)
+    @test interactive_viz.interaction["enableSelection"] == true
+    @test interactive_viz.interaction["enableTooltips"] == true
+    @test interactive_viz.interaction["highlightNeighbors"] == true
+    @test interactive_viz.interaction["bridge"]["targetName"] == "largegraphs_events"
+
     @test_throws "Unsupported force-directed algorithm" force_directed_layout(layout_nodes, edges; algorithm=:unknown)
     @test_throws "Unsupported tree layout algorithm" tree_layout(tree_nodes, tree_edges; algorithm=:unknown)
     @test_throws "Unknown tree root" tree_layout(tree_nodes, tree_edges; root="missing")
@@ -205,6 +244,12 @@ using Graphs
     @test occursin("camera.animate", read(joinpath(pkgdir(LargeGraphs), "assets", "sigma-viewer.js"), String))
     @test occursin("setCustomBBox", read(joinpath(pkgdir(LargeGraphs), "assets", "sigma-viewer.js"), String))
     @test occursin("ratio: 1", read(joinpath(pkgdir(LargeGraphs), "assets", "sigma-viewer.js"), String))
+    @test occursin("new_comm", read(joinpath(pkgdir(LargeGraphs), "assets", "sigma-viewer.js"), String))
+    @test occursin("largegraphs:interaction", read(joinpath(pkgdir(LargeGraphs), "assets", "sigma-viewer.js"), String))
+    @test occursin("enterNode", read(joinpath(pkgdir(LargeGraphs), "assets", "sigma-viewer.js"), String))
+    @test occursin("clickNode", read(joinpath(pkgdir(LargeGraphs), "assets", "sigma-viewer.js"), String))
+    @test occursin("enableTooltips", html)
+    @test occursin("highlightNeighbors", html)
 
     tempdir = mktempdir()
     output = joinpath(tempdir, "graph.html")

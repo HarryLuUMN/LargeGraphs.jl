@@ -49,11 +49,46 @@ positioned_nodes = grid_layout(nodes; columns=4, spacing=1.2)
 viz = render(positioned_nodes, edges; height="600px")
 ```
 
+## Interaction State
+
+For notebook exploration, you can capture click and hover state back into Julia:
+
+```julia
+using IJulia
+using LargeGraphs
+
+state = InteractionState()
+
+viz = render(
+    nodes,
+    edges;
+    interaction_state=state,
+    layout=:force_directed,
+    iterations=80,
+    hide_edges_on_move=true,
+)
+
+display(viz)
+```
+
+After interacting with the graph in the output cell:
+
+```julia
+selected_node(state)
+selected_neighbors(state)
+hovered_node(state)
+interaction_events(state)
+```
+
+The viewer also shows hover tooltips, supports click-to-select, and highlights
+neighbors of the selected node in the browser.
+
 ## Demos in This Repository
 
 - `examples/demo_notebook.ipynb` shows notebook rendering workflows and large-graph viewing.
 - `examples/demo_layout_functions.ipynb` shows direct layout functions returning positioned nodes.
 - `examples/demo_graphsjl.ipynb` shows the `Graphs.jl` input workflow.
+- `examples/demo_interactions.ipynb` shows the notebook interaction workflow.
 - `examples/demo_large_graph.jl` generates the same style of output from a script and writes HTML to disk.
 
 ## Practical Advice

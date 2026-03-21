@@ -12,9 +12,10 @@ using LinearAlgebra
 using Random
 using UUIDs
 
-export EdgeSpec, NodeSpec, SigmaConfig, SigmaGraph, circular_layout, force_directed_layout, graph, grid_layout, random_layout, render, savehtml, spectral_layout, spring_layout, tree_layout
+export EdgeSpec, GraphEvent, InteractionState, NodeSpec, SigmaConfig, SigmaGraph, circular_layout, clear!, force_directed_layout, graph, grid_layout, hovered_node, interaction_events, random_layout, render, savehtml, selected_neighbors, selected_node, spectral_layout, spring_layout, tree_layout
 
 include("types.jl")
+include("interactions.jl")
 include("normalize.jl")
 include("layouts.jl")
 include("rendering.jl")

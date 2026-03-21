@@ -10,13 +10,21 @@ LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 UUIDs = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
 
+[weakdeps]
+IJulia = "7073ff75-c697-5162-941a-fcdaad2a7d2a"
+
+[extensions]
+LargeGraphsIJuliaExt = "IJulia"
+
 [compat]
 Graphs = "1"
+IJulia = "1"
 JSON3 = "1"
 julia = "1.9"
 
 [extras]
+IJulia = "7073ff75-c697-5162-941a-fcdaad2a7d2a"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Test"]
+test = ["Test", "IJulia"]

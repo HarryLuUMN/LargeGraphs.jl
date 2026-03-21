@@ -13,6 +13,7 @@ This package is intentionally small:
 - accept `Graphs.jl` graph objects through the same rendering pipeline
 - compute lightweight random, circular, grid, spectral, tree, and force-directed layouts
 - render HTML suitable for IJulia and Jupyter display
+- support click/hover notebook interactions, selected-neighbor highlighting, and Julia-side interaction state in IJulia
 - export a standalone HTML document for sharing outside the notebook
 
 It does not attempt to be a full graph algorithms package or a heavy-duty

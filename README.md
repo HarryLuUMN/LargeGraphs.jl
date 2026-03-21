@@ -106,6 +106,7 @@ The repository includes:
 
 - `examples/demo_notebook.ipynb` for an IJulia notebook workflow.
 - `examples/demo_layout_functions.ipynb` for direct layout function demos.
+- `examples/demo_interactions.ipynb` for click/hover interaction and Julia-side state updates.
 - `examples/demo_large_graph.jl` for script-based standalone export.
 
 Typical notebook setup:
@@ -136,6 +137,7 @@ usually show up there immediately.
 - `graph(g::Graphs.AbstractGraph; id, config, layout=nothing, node_mapper, edge_mapper, layout_kwargs...)` normalizes a `Graphs.jl` graph into a `SigmaGraph`.
 - `render(nodes, edges; layout=nothing, kwargs..., layout_kwargs...)` builds a `SigmaGraph` with inline render options.
 - `render(g::Graphs.AbstractGraph; layout=nothing, node_mapper, edge_mapper, kwargs..., layout_kwargs...)` renders a `Graphs.jl` graph directly.
+- `InteractionState()` records click and hover events back into Julia when the graph is displayed in IJulia.
 - `savehtml(path, graph)` writes a standalone HTML file.
 - `savehtml(path, nodes, edges; kwargs...)` combines rendering and export in one call.
 - `random_layout(nodes; seed, extent)` assigns random coordinates.
@@ -200,6 +202,45 @@ Edges can be provided as:
 You can also pass a `Graphs.jl` graph object directly to `graph(...)` or `render(...)`.
 Use `node_mapper` and `edge_mapper` when you want labels, sizes, colors, or
 extra attributes derived from graph vertices and edges.
+
+## Notebook Interactions
+
+The viewer now supports:
+
+- hover tooltips
+- click-to-select
+- neighbor highlighting for the selected node
+- optional Julia-side state updates through `IJulia`
+
+Typical usage:
+
+```julia
+using LargeGraphs
+
+state = InteractionState()
+viz = render(
+    nodes,
+    edges;
+    interaction_state=state,
+    layout=:force_directed,
+    iterations=80,
+    hide_edges_on_move=true,
+)
+
+display(viz)
+```
+
+After you interact with the graph in the notebook, inspect the state from a new cell:
+
+```julia
+selected_node(state)
+selected_neighbors(state)
+hovered_node(state)
+interaction_events(state)
+```
+
+Julia-side event updates require `IJulia` and are intended for notebook use.
+The browser-side tooltip, selection, and highlight behavior still works in exported HTML.
 
 ## Examples
 

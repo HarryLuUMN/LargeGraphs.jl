@@ -8,7 +8,18 @@ of the form `(id, x, y, size=1.0, label=nothing)`. Accepted edge inputs include
 `EdgeSpec`, named tuples, dictionaries, and tuples of the form
 `(source, target, size=1.0, label=nothing)`.
 """
-function graph(nodes, edges; id=string("sigma-", uuid4()), config=SigmaConfig(), layout=nothing, layout_kwargs...)
+function graph(
+    nodes,
+    edges;
+    id=string("sigma-", uuid4()),
+    config=SigmaConfig(),
+    layout=nothing,
+    interaction_state=nothing,
+    enable_selection=true,
+    enable_tooltips=true,
+    highlight_neighbors=true,
+    layout_kwargs...,
+)
     normalized_nodes = _normalize_nodes(nodes)
     normalized_edges = _normalize_edges(edges)
     _validate_graph_inputs(normalized_nodes, normalized_edges)
@@ -17,6 +28,12 @@ function graph(nodes, edges; id=string("sigma-", uuid4()), config=SigmaConfig(),
         _apply_layout(normalized_nodes, normalized_edges, layout; layout_kwargs...),
         normalized_edges,
         config,
+        _interaction_payload(
+            interaction_state;
+            enable_selection=enable_selection,
+            enable_tooltips=enable_tooltips,
+            highlight_neighbors=highlight_neighbors,
+        ),
     )
 end
 
@@ -34,13 +51,28 @@ function graph(
     id=string("sigma-", uuid4()),
     config=SigmaConfig(),
     layout=nothing,
+    interaction_state=nothing,
+    enable_selection=true,
+    enable_tooltips=true,
+    highlight_neighbors=true,
     node_mapper=vertex -> (id=string(vertex),),
     edge_mapper=edge -> (source=string(Graphs.src(edge)), target=string(Graphs.dst(edge))),
     layout_kwargs...,
 )
     nodes = [node_mapper(vertex) for vertex in Graphs.vertices(g)]
     edges = [edge_mapper(edge) for edge in Graphs.edges(g)]
-    graph(nodes, edges; id=id, config=config, layout=layout, layout_kwargs...)
+    graph(
+        nodes,
+        edges;
+        id=id,
+        config=config,
+        layout=layout,
+        interaction_state=interaction_state,
+        enable_selection=enable_selection,
+        enable_tooltips=enable_tooltips,
+        highlight_neighbors=highlight_neighbors,
+        layout_kwargs...,
+    )
 end
 
 """
@@ -65,6 +97,10 @@ function render(
     label_grid_cell_size=80,
     max_node_size=16.0,
     min_node_size=2.0,
+    interaction_state=nothing,
+    enable_selection=true,
+    enable_tooltips=true,
+    highlight_neighbors=true,
     layout_kwargs...,
 )
     graph(
@@ -84,6 +120,10 @@ function render(
             max_node_size=max_node_size,
             min_node_size=min_node_size,
         ),
+        interaction_state=interaction_state,
+        enable_selection=enable_selection,
+        enable_tooltips=enable_tooltips,
+        highlight_neighbors=highlight_neighbors,
         layout_kwargs...,
     )
 end
@@ -109,12 +149,20 @@ function render(
     label_grid_cell_size=80,
     max_node_size=16.0,
     min_node_size=2.0,
+    interaction_state=nothing,
+    enable_selection=true,
+    enable_tooltips=true,
+    highlight_neighbors=true,
     layout_kwargs...,
 )
     graph(
         g;
         id=id,
         layout=layout,
+        interaction_state=interaction_state,
+        enable_selection=enable_selection,
+        enable_tooltips=enable_tooltips,
+        highlight_neighbors=highlight_neighbors,
         node_mapper=node_mapper,
         edge_mapper=edge_mapper,
         config=SigmaConfig(
