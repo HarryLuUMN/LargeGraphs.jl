@@ -1,3 +1,9 @@
+"""
+    LargeGraphsJL
+
+Render interactive Sigma.js graph visualizations from Julia data structures,
+with notebook-friendly HTML output and standalone HTML export.
+"""
 module LargeGraphsJL
 
 using JSON3
@@ -5,6 +11,14 @@ using UUIDs
 
 export EdgeSpec, NodeSpec, SigmaConfig, SigmaGraph, graph, render, savehtml
 
+"""
+    NodeSpec(id; x=0.0, y=0.0, size=1.0, label=nothing, color=nothing, attributes=Dict())
+
+Node specification for a Sigma graph.
+
+`id` is required. Remaining fields control layout, labeling, styling, and any
+additional Sigma-compatible node attributes.
+"""
 struct NodeSpec
     id::String
     x::Float64
@@ -15,6 +29,13 @@ struct NodeSpec
     attributes::Dict{String, Any}
 end
 
+"""
+    EdgeSpec(source, target; id=nothing, size=1.0, label=nothing, color=nothing, attributes=Dict())
+
+Edge specification for a Sigma graph.
+
+If `id` is omitted, a UUID-backed edge key is generated automatically.
+"""
 struct EdgeSpec
     id::String
     source::String
@@ -25,6 +46,15 @@ struct EdgeSpec
     attributes::Dict{String, Any}
 end
 
+"""
+    SigmaConfig(; kwargs...)
+
+Rendering configuration for a `SigmaGraph`.
+
+The default settings target notebook output and moderately large graphs while
+allowing callers to tune viewport size, background color, label density, and
+node sizing behavior.
+"""
 struct SigmaConfig
     width::String
     height::String
@@ -38,6 +68,11 @@ struct SigmaConfig
     min_node_size::Float64
 end
 
+"""
+    SigmaGraph
+
+Normalized graph object used by `LargeGraphsJL` for HTML rendering and export.
+"""
 struct SigmaGraph
     id::String
     nodes::Vector{NodeSpec}
@@ -83,10 +118,27 @@ SigmaConfig(;
     Float64(min_node_size),
 )
 
+"""
+    graph(nodes, edges; id="sigma-...", config=SigmaConfig())
+
+Build a normalized `SigmaGraph` from node and edge collections.
+
+Accepted node inputs include `NodeSpec`, named tuples, dictionaries, and tuples
+of the form `(id, x, y, size=1.0, label=nothing)`. Accepted edge inputs include
+`EdgeSpec`, named tuples, dictionaries, and tuples of the form
+`(source, target, size=1.0, label=nothing)`.
+"""
 function graph(nodes, edges; id=string("sigma-", uuid4()), config=SigmaConfig())
     SigmaGraph(string(id), _normalize_nodes(nodes), _normalize_edges(edges), config)
 end
 
+"""
+    render(nodes, edges; kwargs...)
+
+Create a `SigmaGraph` with inline rendering configuration.
+
+This is the main convenience entry point for notebook display.
+"""
 function render(
     nodes,
     edges;
@@ -121,11 +173,23 @@ function render(
     )
 end
 
+render(value::SigmaGraph) = value
+
+"""
+    savehtml(path, graph::SigmaGraph)
+    savehtml(path, nodes, edges; kwargs...)
+
+Write a standalone HTML document containing the graph viewer.
+"""
 function savehtml(path::AbstractString, value::SigmaGraph)
     open(path, "w") do io
         write(io, _standalone_html(value))
     end
     path
+end
+
+function savehtml(path::AbstractString, nodes, edges; kwargs...)
+    savehtml(path, render(nodes, edges; kwargs...))
 end
 
 function Base.show(io::IO, ::MIME"text/html", value::SigmaGraph)
