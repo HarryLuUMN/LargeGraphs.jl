@@ -123,6 +123,17 @@ When a graph does not render in Jupyter, open the browser console first. The
 viewer loads Sigma.js and Graphology as browser ESM modules, so frontend errors
 usually show up there immediately.
 
+## Benchmarks
+
+A first rendering benchmark scaffold that compares `LargeGraphs` and `GraphMakie`
+is available under `benchmarks/`.
+
+Run a quick smoke benchmark from the repository root:
+
+```bash
+julia --project=benchmarks benchmarks/scripts/run_smoke.jl
+```
+
 ## API Overview
 
 ### Constructors

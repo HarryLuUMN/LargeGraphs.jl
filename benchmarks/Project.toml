@@ -1,0 +1,23 @@
+name = "LGRenderBenchmarks"
+uuid = "9a7b03b9-7cf6-444b-a989-45f10f3f3fd8"
+version = "0.1.0"
+
+[deps]
+CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
+Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
+GraphMakie = "1ecd5474-83a3-4783-bb4f-06765db800d2"
+Graphs = "86223c79-3864-5bf0-83f7-82e725a168b6"
+JSON3 = "0f8b85d8-7281-11e9-16c2-39a750bddbf1"
+LargeGraphs = "0f7f7d18-b84d-4dfd-9c1e-06e0662f86c2"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
+
+[sources]
+LargeGraphs = {path = ".."}
+
+[compat]
+CairoMakie = "0.13"
+GraphMakie = "0.5"
+Graphs = "1"
+JSON3 = "1"
+julia = "1.9"

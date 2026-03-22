@@ -24,6 +24,7 @@ layout engine.
 - Use [API reference](api.md) for constructor and function details.
 - Use [Notebook guide](notebooks.md) for IJulia and Jupyter workflows.
 - Use [Troubleshooting](troubleshooting.md) when rendering does not behave as expected.
+- Use the repository `benchmarks/` subproject for rendering benchmark scripts and results.
 
 ## Layout Entry Points
 
