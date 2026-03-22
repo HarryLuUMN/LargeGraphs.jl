@@ -146,6 +146,8 @@ julia --project=benchmarks benchmarks/scripts/run_smoke.jl
 
 - `graph(nodes, edges; id, config, layout=nothing, layout_kwargs...)` normalizes graph data into a `SigmaGraph`.
 - `graph(g::Graphs.AbstractGraph; id, config, layout=nothing, node_mapper, edge_mapper, layout_kwargs...)` normalizes a `Graphs.jl` graph into a `SigmaGraph`.
+- `layout_graph(nodes, edges; layout=nothing, layout_kwargs...)` runs the layout stage and returns positioned nodes with normalized edges.
+- `assemble_graph(layouted_or_nodes, edges=nothing; id, config, interaction_state, ...)` builds a `SigmaGraph` from already-positioned graph data.
 - `render(nodes, edges; layout=nothing, kwargs..., layout_kwargs...)` builds a `SigmaGraph` with inline render options.
 - `render(g::Graphs.AbstractGraph; layout=nothing, node_mapper, edge_mapper, kwargs..., layout_kwargs...)` renders a `Graphs.jl` graph directly.
 - `InteractionState()` records click and hover events back into Julia when the graph is displayed in IJulia.
@@ -179,6 +181,14 @@ Tree-shaped data can use a tree-specific layout:
 
 ```julia
 viz = render(nodes, edges; layout=:tree, algorithm=:layered, root="a", extent=2.0)
+```
+
+When you want to split layout from rendering, use the staged pipeline directly:
+
+```julia
+layouted = layout_graph(nodes, edges; layout=:force_directed, algorithm=:forceatlas2, iterations=60, seed=7)
+viz = assemble_graph(layouted; config=SigmaConfig(height="520px"))
+savehtml("graph.html", viz)
 ```
 
 `layout` accepts:

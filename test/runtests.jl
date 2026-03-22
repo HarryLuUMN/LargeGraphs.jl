@@ -155,6 +155,27 @@ using Graphs
     @test all(-1.2 <= node.x <= 1.2 for node in force_viz.nodes)
     @test all(-1.2 <= node.y <= 1.2 for node in force_viz.nodes)
 
+    staged_layout = layout_graph(layout_nodes, edges; layout=:grid, columns=2)
+    @test keys(staged_layout) == (:nodes, :edges)
+    @test staged_layout.nodes isa Vector{NodeSpec}
+    @test staged_layout.edges isa Vector{EdgeSpec}
+    @test Set((node.x, node.y) for node in staged_layout.nodes) == Set([
+        (-0.5, 0.5),
+        (0.5, 0.5),
+        (-0.5, -0.5),
+        (0.5, -0.5),
+    ])
+
+    staged_viz = assemble_graph(staged_layout; id="staged", config=SigmaConfig(height="480px"))
+    @test staged_viz isa SigmaGraph
+    @test staged_viz.id == "staged"
+    @test staged_viz.config.height == "480px"
+    @test [node.id for node in staged_viz.nodes] == ["a", "b", "c", "d"]
+
+    staged_parts_viz = assemble_graph(staged_layout.nodes, staged_layout.edges; id="staged-parts")
+    @test staged_parts_viz isa SigmaGraph
+    @test staged_parts_viz.id == "staged-parts"
+
     custom_viz = render(layout_nodes, edges; layout=(nodes, edges; shift=0.0) -> [
         NodeSpec(node.id; x=index + shift, y=-index, size=node.size, label=node.label, color=node.color, attributes=node.attributes)
         for (index, node) in pairs(nodes)
@@ -190,6 +211,16 @@ using Graphs
         (-0.5, -0.5),
         (0.5, -0.5),
     ])
+
+    staged_graph_input = layout_graph(
+        graph_input;
+        layout=:grid,
+        node_mapper=vertex -> (id="g$(vertex)", label="Graph $(vertex)"),
+        edge_mapper=edge -> (source="g$(src(edge))", target="g$(dst(edge))"),
+        columns=2,
+    )
+    @test [node.id for node in staged_graph_input.nodes] == ["g1", "g2", "g3", "g4"]
+    @test all(startswith(edge.source, "g") for edge in staged_graph_input.edges)
 
     interaction_state = InteractionState()
     @test selected_node(interaction_state) === nothing
