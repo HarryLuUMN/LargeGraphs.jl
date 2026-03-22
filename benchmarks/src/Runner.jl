@@ -13,7 +13,8 @@ struct BenchmarkResult
     scenario::String
     nodes::Int
     edges::Int
-    samples::Vector{Float64}
+    total_samples::Vector{Float64}
+    stage_samples::Dict{String, Vector{Float64}}
     artifact_bytes::Int
 end
 
@@ -63,19 +64,21 @@ function _run_single(backend::BenchmarkBackend, graph, scenario::Scenario, confi
     for i in 1:config.warmup
         warmup_path = _artifact_path(artifacts_dir, scenario.name, backend_name(backend), "warmup$(i)", artifact_extension(backend))
         GC.gc()
-        render_artifact(backend, graph, warmup_path; layout_seed=scenario.seed + i)
+        run_backend_once(backend, graph, warmup_path; layout_seed=scenario.seed + i)
     end
 
-    timings_ms = Float64[]
+    total_timings_ms = Float64[]
+    stage_timings_ms = Dict{String, Vector{Float64}}()
     bytes = 0
+
     for i in 1:config.samples
         run_id = lpad(string(i), 2, '0')
         output_path = _artifact_path(artifacts_dir, scenario.name, backend_name(backend), run_id, artifact_extension(backend))
         GC.gc()
-        elapsed_s = @elapsed begin
-            bytes = render_artifact(backend, graph, output_path; layout_seed=scenario.seed + 100 + i)
-        end
-        push!(timings_ms, elapsed_s * 1000.0)
+        run = run_backend_once(backend, graph, output_path; layout_seed=scenario.seed + 100 + i)
+        push!(total_timings_ms, sum(values(run.stage_timings_ms)))
+        _push_stage_timings!(stage_timings_ms, run.stage_timings_ms)
+        bytes = run.artifact_bytes
     end
 
     BenchmarkResult(
@@ -83,7 +86,8 @@ function _run_single(backend::BenchmarkBackend, graph, scenario::Scenario, confi
         scenario.name,
         nv(graph),
         ne(graph),
-        timings_ms,
+        total_timings_ms,
+        stage_timings_ms,
         bytes,
     )
 end
@@ -93,23 +97,38 @@ function _artifact_path(artifacts_dir::AbstractString, scenario_name::AbstractSt
     joinpath(artifacts_dir, "$(scenario_name)-$(backend_slug)-$(run_id).$(extension)")
 end
 
+function _push_stage_timings!(all_samples::Dict{String, Vector{Float64}}, run_samples::Dict{String, Float64})
+    for (stage_name, timing_ms) in run_samples
+        push!(get!(all_samples, stage_name, Float64[]), timing_ms)
+    end
+end
+
 function _to_row(result::BenchmarkResult)
-    std_ms = length(result.samples) > 1 ? std(result.samples) : 0.0
+    total_stats = _stats_dict(result.total_samples)
+    stage_rows = Dict(stage_name => _stats_dict(samples) for (stage_name, samples) in sort(collect(result.stage_samples); by=first))
     Dict(
         "backend" => result.backend,
         "scenario" => result.scenario,
         "nodes" => result.nodes,
         "edges" => result.edges,
-        "samples_ms" => result.samples,
-        "sample_count" => length(result.samples),
-        "mean_ms" => mean(result.samples),
-        "trimmed_mean_ms" => _trimmed_mean(result.samples),
-        "median_ms" => median(result.samples),
-        "min_ms" => minimum(result.samples),
-        "max_ms" => maximum(result.samples),
-        "std_ms" => std_ms,
-        "cv_pct" => mean(result.samples) == 0 ? 0.0 : (std_ms / mean(result.samples)) * 100.0,
         "artifact_bytes" => result.artifact_bytes,
+        "total_ms" => total_stats,
+        "stages_ms" => stage_rows,
+    )
+end
+
+function _stats_dict(samples::Vector{Float64})
+    std_ms = length(samples) > 1 ? std(samples) : 0.0
+    Dict(
+        "samples" => samples,
+        "sample_count" => length(samples),
+        "mean" => mean(samples),
+        "trimmed_mean" => _trimmed_mean(samples),
+        "median" => median(samples),
+        "min" => minimum(samples),
+        "max" => maximum(samples),
+        "std" => std_ms,
+        "cv_pct" => mean(samples) == 0 ? 0.0 : (std_ms / mean(samples)) * 100.0,
     )
 end
 
@@ -117,13 +136,13 @@ function _print_summary(results::Vector{BenchmarkResult}, summary_path::Abstract
     println("Render benchmark summary")
     println("results file: $(summary_path)")
     for result in results
-        mean_ms = round(mean(result.samples); digits=2)
-        trimmed_mean_ms = round(_trimmed_mean(result.samples); digits=2)
-        median_ms = round(median(result.samples); digits=2)
-        min_ms = round(minimum(result.samples); digits=2)
-        max_ms = round(maximum(result.samples); digits=2)
-        std_ms = round(length(result.samples) > 1 ? std(result.samples) : 0.0; digits=2)
-        println("- $(result.scenario) | $(result.backend) | nodes=$(result.nodes), edges=$(result.edges), mean=$(mean_ms) ms, trimmed_mean=$(trimmed_mean_ms) ms, median=$(median_ms) ms, min=$(min_ms) ms, max=$(max_ms) ms, std=$(std_ms) ms, artifact=$(result.artifact_bytes) bytes")
+        total_mean_ms = round(mean(result.total_samples); digits=2)
+        total_trimmed_mean_ms = round(_trimmed_mean(result.total_samples); digits=2)
+        stage_parts = [
+            "$(stage_name)=$(round(_trimmed_mean(samples); digits=2)) ms"
+            for (stage_name, samples) in sort(collect(result.stage_samples); by=first)
+        ]
+        println("- $(result.scenario) | $(result.backend) | total_mean=$(total_mean_ms) ms, total_trimmed_mean=$(total_trimmed_mean_ms) ms, $(join(stage_parts, ", ")), artifact=$(result.artifact_bytes) bytes")
     end
 end
 
@@ -154,8 +173,8 @@ function _write_markdown_summary(
         "",
         "## Overview",
         "",
-        "| Scenario | Nodes | Edges | Faster backend | Speedup | Smaller artifact | Size ratio |",
-        "| --- | ---: | ---: | --- | ---: | --- | ---: |",
+        "| Scenario | Nodes | Edges | Faster backend | Total speedup | Smaller artifact | Size ratio | Largest stage share |",
+        "| --- | ---: | ---: | --- | ---: | --- | ---: | --- |",
     ]
 
     for scenario_name in scenario_names
@@ -164,39 +183,59 @@ function _write_markdown_summary(
         smallest = _smallest_artifact_result(scenario_results)
         slowest = _slowest_result(scenario_results)
         largest = _largest_artifact_result(scenario_results)
-        speedup = _comparison_time_ms(slowest) / _comparison_time_ms(fastest)
+        speedup = _comparison_total_ms(slowest) / _comparison_total_ms(fastest)
         size_ratio = largest.artifact_bytes / smallest.artifact_bytes
+        stage_name, stage_share = _largest_stage_share(fastest)
         push!(
             lines,
-            "| `$(scenario_name)` | $(fastest.nodes) | $(fastest.edges) | $(fastest.backend) | $(_fmt(speedup; digits=2))x | $(smallest.backend) | $(_fmt(size_ratio; digits=2))x |",
+            "| `$(scenario_name)` | $(fastest.nodes) | $(fastest.edges) | $(fastest.backend) | $(_fmt(speedup; digits=2))x | $(smallest.backend) | $(_fmt(size_ratio; digits=2))x | $(stage_name) ($(_fmt(stage_share; digits=1))%) |",
         )
     end
 
     push!(lines, "", "## Scenario Details", "")
     for scenario_name in scenario_names
-        scenario_results = sort(grouped[scenario_name]; by=result -> mean(result.samples))
+        scenario_results = sort(grouped[scenario_name]; by=_comparison_total_ms)
         push!(lines, "### $(scenario_name)", "")
-        push!(lines, "| Backend | Mean (ms) | Trimmed mean (ms) | Median (ms) | Std (ms) | CV (%) | Artifact |")
-        push!(lines, "| --- | ---: | ---: | ---: | ---: | ---: | ---: |")
+        push!(lines, "| Backend | Total trimmed mean (ms) | Total mean (ms) | CV (%) | Artifact | Stage breakdown |")
+        push!(lines, "| --- | ---: | ---: | ---: | ---: | --- |")
         for result in scenario_results
-            mean_ms = mean(result.samples)
-            std_ms = length(result.samples) > 1 ? std(result.samples) : 0.0
-            cv_pct = mean_ms == 0 ? 0.0 : (std_ms / mean_ms) * 100.0
+            total_mean_ms = mean(result.total_samples)
+            total_std_ms = length(result.total_samples) > 1 ? std(result.total_samples) : 0.0
+            total_cv_pct = total_mean_ms == 0 ? 0.0 : (total_std_ms / total_mean_ms) * 100.0
             push!(
                 lines,
-                "| $(result.backend) | $(_fmt(mean_ms; digits=2)) | $(_fmt(_trimmed_mean(result.samples); digits=2)) | $(_fmt(median(result.samples); digits=2)) | $(_fmt(std_ms; digits=2)) | $(_fmt(cv_pct; digits=1)) | $(_fmt_bytes(result.artifact_bytes)) |",
+                "| $(result.backend) | $(_fmt(_trimmed_mean(result.total_samples); digits=2)) | $(_fmt(total_mean_ms; digits=2)) | $(_fmt(total_cv_pct; digits=1)) | $(_fmt_bytes(result.artifact_bytes)) | $(_stage_breakdown_summary(result)) |",
             )
         end
         push!(lines, "")
+        for result in scenario_results
+            push!(lines, "#### $(result.backend) stage details")
+            push!(lines, "")
+            push!(lines, "| Stage | Trimmed mean (ms) | Mean (ms) | Share of total | CV (%) |")
+            push!(lines, "| --- | ---: | ---: | ---: | ---: |")
+            total_ms = _comparison_total_ms(result)
+            for (stage_name, samples) in sort(collect(result.stage_samples); by=first)
+                stage_mean_ms = mean(samples)
+                stage_std_ms = length(samples) > 1 ? std(samples) : 0.0
+                stage_cv_pct = stage_mean_ms == 0 ? 0.0 : (stage_std_ms / stage_mean_ms) * 100.0
+                stage_trimmed_ms = _trimmed_mean(samples)
+                share_pct = total_ms == 0 ? 0.0 : (stage_trimmed_ms / total_ms) * 100.0
+                push!(
+                    lines,
+                    "| `$(stage_name)` | $(_fmt(stage_trimmed_ms; digits=2)) | $(_fmt(stage_mean_ms; digits=2)) | $(_fmt(share_pct; digits=1))% | $(_fmt(stage_cv_pct; digits=1)) |",
+                )
+            end
+            push!(lines, "")
+        end
         push!(lines, _scenario_observation(scenario_results))
         push!(lines, "")
     end
 
     push!(lines, "## Notes", "")
-    push!(lines, "- Timings are end-to-end artifact generation times measured after warmup runs.")
+    push!(lines, "- Timings are split by backend stage and then summed into `total_ms`.")
     push!(lines, "- `Trimmed mean` drops the fastest and slowest sample when at least three timed samples are available.")
     push!(lines, "- `CV (%)` highlights run-to-run stability; lower values indicate steadier measurements.")
-    push!(lines, "- Overview speedups and winners are based on `trimmed mean` so one noisy sample does not dominate the comparison.")
+    push!(lines, "- Overview speedups and winners are based on total `trimmed mean` so one noisy sample does not dominate the comparison.")
 
     open(summary_md_path, "w") do io
         write(io, join(lines, "\n"))
@@ -209,17 +248,43 @@ function _scenario_observation(results::Vector{BenchmarkResult})
     slowest = _slowest_result(results)
     smallest = _smallest_artifact_result(results)
     largest = _largest_artifact_result(results)
-    speedup = _comparison_time_ms(slowest) / _comparison_time_ms(fastest)
+    speedup = _comparison_total_ms(slowest) / _comparison_total_ms(fastest)
     size_ratio = largest.artifact_bytes / smallest.artifact_bytes
-    "`$(fastest.backend)` was faster in this scenario by $(_fmt(speedup; digits=2))x, while `$(smallest.backend)` produced the smaller artifact by $(_fmt(size_ratio; digits=2))x."
+    dominant_stage, dominant_share = _largest_stage_share(fastest)
+    "`$(fastest.backend)` was faster overall by $(_fmt(speedup; digits=2))x. Its largest timed stage was `$(dominant_stage)` at $(_fmt(dominant_share; digits=1))% of total trimmed mean, while `$(smallest.backend)` produced the smaller artifact by $(_fmt(size_ratio; digits=2))x."
 end
 
-_fastest_result(results::Vector{BenchmarkResult}) = _pick_min(_comparison_time_ms, results)
-_slowest_result(results::Vector{BenchmarkResult}) = _pick_max(_comparison_time_ms, results)
+_fastest_result(results::Vector{BenchmarkResult}) = _pick_min(_comparison_total_ms, results)
+_slowest_result(results::Vector{BenchmarkResult}) = _pick_max(_comparison_total_ms, results)
 _smallest_artifact_result(results::Vector{BenchmarkResult}) = _pick_min(result -> result.artifact_bytes, results)
 _largest_artifact_result(results::Vector{BenchmarkResult}) = _pick_max(result -> result.artifact_bytes, results)
 
-_comparison_time_ms(result::BenchmarkResult) = _trimmed_mean(result.samples)
+_comparison_total_ms(result::BenchmarkResult) = _trimmed_mean(result.total_samples)
+
+function _largest_stage_share(result::BenchmarkResult)
+    total_ms = _comparison_total_ms(result)
+    best_name = ""
+    best_share = -Inf
+    for (stage_name, samples) in result.stage_samples
+        share_pct = total_ms == 0 ? 0.0 : (_trimmed_mean(samples) / total_ms) * 100.0
+        if share_pct > best_share
+            best_name = stage_name
+            best_share = share_pct
+        end
+    end
+    best_name, best_share
+end
+
+function _stage_breakdown_summary(result::BenchmarkResult)
+    parts = String[]
+    total_ms = _comparison_total_ms(result)
+    for (stage_name, samples) in sort(collect(result.stage_samples); by=first)
+        stage_trimmed_ms = _trimmed_mean(samples)
+        share_pct = total_ms == 0 ? 0.0 : (stage_trimmed_ms / total_ms) * 100.0
+        push!(parts, "`$(stage_name)` $(_fmt(stage_trimmed_ms; digits=2)) ms ($(_fmt(share_pct; digits=1))%)")
+    end
+    join(parts, ", ")
+end
 
 function _pick_min(f, xs)
     best = first(xs)

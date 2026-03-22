@@ -43,6 +43,7 @@ Results are written to:
 The generated Markdown report includes:
 
 - an overview table per scenario
+- total timings plus per-stage timing breakdowns
 - trimmed means, standard deviation, and coefficient of variation
 - automatic speedup and artifact-size comparisons between backends
 
@@ -58,8 +59,8 @@ You can customize scenario sizes and density by editing `src/Scenarios.jl` or by
 
 This scaffold intentionally compares the same task class for both backends: generate a visual artifact from a graph scenario.
 
-- `LargeGraphs`: graph normalization, layout, and standalone HTML export
-- `GraphMakie`: graph plotting, layout, and PNG export
+- `LargeGraphs`: layout, graph assembly, and standalone HTML export
+- `GraphMakie`: plot construction and PNG export
 
 The backends target different output media, so this first scaffold is a practical starting point rather than a final authoritative performance ranking.
 
@@ -68,3 +69,4 @@ The backends target different output media, so this first scaffold is a practica
 - Smoke runs default to `warmup=2` and `samples=3`
 - Default benchmark runs use `warmup=2` and `samples=5`
 - The harness runs `GC.gc()` before each warmup and timed sample to reduce cross-run noise
+- The JSON output stores `total_ms` and `stages_ms` separately so you can isolate which phase dominates
