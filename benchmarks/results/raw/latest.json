@@ -1,0 +1,62 @@
+[
+    {
+        "scenario": "smoke_erdos_renyi",
+        "backend": "LargeGraphs",
+        "nodes": 120,
+        "min_ms": 177.02308299999999,
+        "max_ms": 185.749042,
+        "mean_ms": 181.38606249999998,
+        "artifact_bytes": 63034,
+        "median_ms": 181.38606249999998,
+        "edges": 222,
+        "samples_ms": [
+            185.749042,
+            177.02308299999999
+        ]
+    },
+    {
+        "scenario": "smoke_erdos_renyi",
+        "backend": "GraphMakie",
+        "nodes": 120,
+        "min_ms": 88.682042,
+        "max_ms": 355.053375,
+        "mean_ms": 221.8677085,
+        "artifact_bytes": 445905,
+        "median_ms": 221.8677085,
+        "edges": 222,
+        "samples_ms": [
+            88.682042,
+            355.053375
+        ]
+    },
+    {
+        "scenario": "smoke_preferential_attachment",
+        "backend": "LargeGraphs",
+        "nodes": 180,
+        "min_ms": 402.27216599999997,
+        "max_ms": 405.11395799999997,
+        "mean_ms": 403.69306199999994,
+        "artifact_bytes": 124534,
+        "median_ms": 403.69306199999994,
+        "edges": 885,
+        "samples_ms": [
+            405.11395799999997,
+            402.27216599999997
+        ]
+    },
+    {
+        "scenario": "smoke_preferential_attachment",
+        "backend": "GraphMakie",
+        "nodes": 180,
+        "min_ms": 156.079375,
+        "max_ms": 396.54154200000005,
+        "mean_ms": 276.31045850000004,
+        "artifact_bytes": 2736298,
+        "median_ms": 276.31045850000004,
+        "edges": 885,
+        "samples_ms": [
+            156.079375,
+            396.54154200000005
+        ]
+    }
+]
