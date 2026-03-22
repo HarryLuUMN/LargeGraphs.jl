@@ -107,7 +107,12 @@ function _interaction_payload(state; enable_selection=true, enable_tooltips=true
     payload
 end
 
-_interaction_bridge(::Any) = nothing
+function _interaction_bridge(state::InteractionState)
+    Dict(
+        "targetName" => "largegraphs_events",
+        "sessionId" => state.id,
+    )
+end
 
 function _apply_interaction_event!(state::InteractionState, data)
     event_type = _interaction_event_type(data)

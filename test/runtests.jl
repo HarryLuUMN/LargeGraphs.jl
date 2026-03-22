@@ -1,7 +1,6 @@
 using Test
 using LargeGraphs
 using Graphs
-using IJulia
 
 @testset "LargeGraphs" begin
     positioned_nodes = [
