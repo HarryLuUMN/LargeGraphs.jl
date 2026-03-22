@@ -65,6 +65,13 @@ using IJulia
         (1.5, -1.5),
     ])
 
+    orthogonal_nodes = orthogonal_layout(layout_nodes, edges; extent=2.0, layer_spacing=1.0)
+    @test [node.id for node in orthogonal_nodes] == ["a", "b", "c", "d"]
+    @test all(-2.0 <= node.x <= 2.0 for node in orthogonal_nodes)
+    @test all(-2.0 <= node.y <= 2.0 for node in orthogonal_nodes)
+    @test length(Set((round(node.x, digits=6), round(node.y, digits=6)) for node in orthogonal_nodes)) == 4
+    @test all(isapprox(node.x, round(node.x); atol=1.0e-8) || isapprox(node.y, round(node.y); atol=1.0e-8) for node in orthogonal_nodes)
+
     spectral_nodes = spectral_layout(layout_nodes, edges; extent=1.5, seed=5)
     @test [node.id for node in spectral_nodes] == ["a", "b", "c", "d"]
     @test all(-1.5 <= node.x <= 1.5 for node in spectral_nodes)
@@ -118,6 +125,11 @@ using IJulia
     circular_viz = render(layout_nodes, edges; layout=:circular)
     @test circular_viz isa SigmaGraph
     @test all(isapprox(sqrt(node.x^2 + node.y^2), 1.0; atol=1.0e-8) for node in circular_viz.nodes)
+
+    orthogonal_viz = render(layout_nodes, edges; layout=:orthogonal, extent=1.2, layer_spacing=1.0)
+    @test orthogonal_viz isa SigmaGraph
+    @test all(-1.2 <= node.x <= 1.2 for node in orthogonal_viz.nodes)
+    @test all(-1.2 <= node.y <= 1.2 for node in orthogonal_viz.nodes)
 
     spectral_viz = render(layout_nodes, edges; layout=:spectral, extent=1.2, seed=13)
     @test spectral_viz isa SigmaGraph

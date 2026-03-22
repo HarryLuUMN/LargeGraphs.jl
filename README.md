@@ -143,6 +143,8 @@ usually show up there immediately.
 - `random_layout(nodes; seed, extent)` assigns random coordinates.
 - `circular_layout(nodes; radius, start_angle)` places nodes on a circle.
 - `grid_layout(nodes; columns, spacing)` places nodes on a centered grid.
+- `orthogonal_layout(nodes, edges; extent, layer_spacing, component_spacing)` places nodes on a grid with alternating orthogonal levels.
+- `spectral_layout(nodes, edges; extent, seed)` computes a spectral embedding from the graph Laplacian.
 - `tree_layout(nodes, edges; algorithm=:layered, kwargs...)` runs tree-oriented layouts with `:layered` and `:radial`.
 - `force_directed_layout(nodes, edges; algorithm=:fruchterman_reingold, kwargs...)` runs a force-directed family with `:fruchterman_reingold`, `:kamada_kawai`, or `:forceatlas2`.
 - `spring_layout(nodes, edges; iterations, seed, extent, gravity, cooling)` remains as a compatibility alias for Fruchterman-Reingold.
@@ -170,7 +172,7 @@ viz = render(nodes, edges; layout=:tree, algorithm=:layered, root="a", extent=2.
 
 `layout` accepts:
 
-- symbols: `:random`, `:circular`, `:grid`, `:spectral`, `:tree`, `:spring`, `:force_directed`
+- symbols: `:random`, `:circular`, `:grid`, `:orthogonal`, `:spectral`, `:tree`, `:spring`, `:force_directed`
 - strings with the same names
 - a custom callable of the form `(nodes, edges; kwargs...) -> positioned_nodes`
 

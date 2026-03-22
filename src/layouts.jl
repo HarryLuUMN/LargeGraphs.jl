@@ -41,6 +41,16 @@ function grid_layout(nodes, edges; kwargs...)
 end
 
 """
+    orthogonal_layout(nodes, edges; extent=1.0, layer_spacing=1.0, component_spacing=2.0)
+
+Place nodes on a grid using a breadth-first spanning forest with alternating
+horizontal and vertical levels.
+"""
+function orthogonal_layout(nodes, edges; kwargs...)
+    _orthogonal_layout(_normalize_nodes(nodes), _normalize_edges(edges); kwargs...)
+end
+
+"""
     spectral_layout(nodes, edges; extent=1.0, jitter=1.0e-6, seed=nothing)
 
 Compute a spectral embedding from the graph Laplacian.
@@ -95,6 +105,7 @@ function _resolve_layout(layout::Symbol)
     layout === :random && return random_layout
     layout === :circular && return circular_layout
     layout === :grid && return grid_layout
+    layout === :orthogonal && return orthogonal_layout
     layout === :spectral && return spectral_layout
     layout === :tree && return tree_layout
     layout === :spring && return spring_layout
@@ -148,6 +159,96 @@ function _grid_layout(nodes::Vector{NodeSpec}; columns=nothing, spacing=1.0)
         )
     end
     positioned
+end
+
+function _orthogonal_layout(
+    nodes::Vector{NodeSpec},
+    edges::Vector{EdgeSpec};
+    extent=1.0,
+    layer_spacing=1.0,
+    component_spacing=2.0,
+)
+    count = length(nodes)
+    count == 0 && return NodeSpec[]
+    count == 1 && return [_with_position(only(nodes), 0.0, 0.0)]
+
+    adjacency = [Int[] for _ in 1:count]
+    for (source, target) in _edge_indices(nodes, edges)
+        push!(adjacency[source], target)
+        push!(adjacency[target], source)
+    end
+    for neighbors in adjacency
+        sort!(neighbors)
+    end
+
+    xs = zeros(Float64, count)
+    ys = zeros(Float64, count)
+    visited = falses(count)
+    component_order = sortperm([(-length(adjacency[index]), index) for index in 1:count])
+    x_shift = 0.0
+
+    for root in component_order
+        visited[root] && continue
+        component_nodes, levels = _orthogonal_component_levels(root, adjacency, visited)
+        max_depth = maximum(levels[node] for node in component_nodes)
+
+        for depth in 0:max_depth
+            level_nodes = sort([node for node in component_nodes if levels[node] == depth]; by=node -> (-length(adjacency[node]), node))
+            offsets = _orthogonal_offsets(length(level_nodes), layer_spacing)
+            for (index, node) in pairs(level_nodes)
+                if iseven(depth)
+                    xs[node] = depth * layer_spacing
+                    ys[node] = offsets[index]
+                else
+                    xs[node] = offsets[index]
+                    ys[node] = -depth * layer_spacing
+                end
+            end
+        end
+
+        component_xs = xs[component_nodes]
+        component_ys = ys[component_nodes]
+        min_x, max_x = extrema(component_xs)
+        min_y, max_y = extrema(component_ys)
+        for node in component_nodes
+            xs[node] += x_shift - min_x
+            ys[node] -= (max_y + min_y) / 2
+        end
+        x_shift += (max_x - min_x) + component_spacing
+    end
+
+    xs, ys = _rescale_positions(xs, ys; extent=extent)
+    [_with_position(node, xs[index], ys[index]) for (index, node) in pairs(nodes)]
+end
+
+function _orthogonal_component_levels(root, adjacency, visited)
+    component_nodes = Int[]
+    levels = fill(-1, length(adjacency))
+    queue = [root]
+    visited[root] = true
+    levels[root] = 0
+    head = 1
+
+    while head <= length(queue)
+        node = queue[head]
+        head += 1
+        push!(component_nodes, node)
+        ordered_neighbors = sort(adjacency[node]; by=neighbor -> (-length(adjacency[neighbor]), neighbor))
+        for neighbor in ordered_neighbors
+            visited[neighbor] && continue
+            visited[neighbor] = true
+            levels[neighbor] = levels[node] + 1
+            push!(queue, neighbor)
+        end
+    end
+
+    component_nodes, levels
+end
+
+function _orthogonal_offsets(count, spacing)
+    count == 0 && return Float64[]
+    start = -spacing * (count - 1) / 2
+    [start + spacing * (index - 1) for index in 1:count]
 end
 
 function _spectral_layout(nodes::Vector{NodeSpec}, edges::Vector{EdgeSpec}; extent=1.0, jitter=1.0e-6, seed=nothing)
