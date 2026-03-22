@@ -263,6 +263,17 @@ using Graphs
     @test occursin("enableTooltips", html)
     @test occursin("highlightNeighbors", html)
 
+    escaped_viz = render(
+        [(id="unsafe\"id", x=0.0, y=0.0, label="</script><script>alert(1)</script>")],
+        EdgeSpec[];
+        id="unsafe\"id",
+    )
+    escaped_html = sprint(show, MIME"text/html"(), escaped_viz)
+    @test occursin("unsafe&quot;id", escaped_html)
+    @test occursin("<\\/script><script>alert(1)<\\/script>", escaped_html)
+    @test !occursin("</script><script>alert(1)</script>", escaped_html)
+    @test occursin("""window.LargeGraphs.render("unsafe\\\"id")""", escaped_html)
+
     tempdir = mktempdir()
     output = joinpath(tempdir, "graph.html")
     savehtml(output, positioned_nodes, [(source="a", target="b", color="#94a3b8")]; height="480px")

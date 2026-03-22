@@ -77,16 +77,18 @@ function _config_payload(config::SigmaConfig)
 end
 
 function _html(value::SigmaGraph)
-    payload = JSON3.write(_graph_payload(value))
+    graph_id = _escape_html_attribute(value.id)
+    payload_id = _escape_html_attribute("$(value.id)-payload")
+    payload = _escape_script_data(JSON3.write(_graph_payload(value)))
     bootstrap = read(joinpath(pkgdir(@__MODULE__), "assets", "sigma-viewer.js"), String)
     """
-    <div id="$(value.id)" class="large-graphs-jl-root" style="width: $(value.config.width);">
-      <div class="large-graphs-jl-stage" style="width: 100%; height: $(value.config.height); background: $(value.config.background);"></div>
+    <div id="$(graph_id)" class="large-graphs-jl-root" style="width: $(_escape_html_attribute(value.config.width));">
+      <div class="large-graphs-jl-stage" style="width: 100%; height: $(_escape_html_attribute(value.config.height)); background: $(_escape_html_attribute(value.config.background));"></div>
     </div>
-    <script type="application/json" id="$(value.id)-payload">$(payload)</script>
+    <script type="application/json" id="$(payload_id)">$(payload)</script>
     <script>
     $(bootstrap)
-    void window.LargeGraphs.render("$(value.id)");
+    void window.LargeGraphs.render("$(_escape_javascript_string(value.id))");
     </script>
     """
 end
@@ -105,4 +107,23 @@ function _standalone_html(value::SigmaGraph)
     </body>
     </html>
     """
+end
+
+function _escape_html_attribute(value)
+    escaped = replace(string(value), "&" => "&amp;")
+    escaped = replace(escaped, "\"" => "&quot;")
+    escaped = replace(escaped, "<" => "&lt;")
+    replace(escaped, ">" => "&gt;")
+end
+
+function _escape_javascript_string(value)
+    escaped = replace(string(value), "\\" => "\\\\")
+    escaped = replace(escaped, "\"" => "\\\"")
+    escaped = replace(escaped, "\n" => "\\n")
+    escaped = replace(escaped, "\r" => "\\r")
+    replace(escaped, "</" => "<\\/")
+end
+
+function _escape_script_data(value)
+    replace(string(value), "</" => "<\\/")
 end
