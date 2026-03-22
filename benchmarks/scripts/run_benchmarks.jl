@@ -6,5 +6,5 @@ Pkg.instantiate()
 
 using LGRenderBenchmarks
 
-config = BenchmarkConfig(samples=4, warmup=1, output_root=joinpath(project_dir, "results"))
+config = BenchmarkConfig(samples=5, warmup=2, output_root=joinpath(project_dir, "results"))
 run_benchmarks(config=config)

@@ -12,7 +12,7 @@ The benchmark measures end-to-end artifact generation from the same input graphs
 - `Project.toml`: isolated benchmark dependencies
 - `src/Scenarios.jl`: graph scenario definitions and deterministic generators
 - `src/Backends.jl`: backend-specific rendering/export adapters
-- `src/Runner.jl`: benchmark loop, timing, and JSON summary output
+- `src/Runner.jl`: benchmark loop, timing, JSON output, and Markdown report generation
 - `scripts/run_smoke.jl`: small sanity run
 - `scripts/run_benchmarks.jl`: default benchmark run
 - `results/raw/`: JSON summaries (`latest.json` and timestamped snapshots)
@@ -37,7 +37,14 @@ Results are written to:
 
 - `benchmarks/results/raw/latest.json`
 - `benchmarks/results/raw/summary-<timestamp>.json`
+- `benchmarks/results/summary.md`
 - `benchmarks/results/artifacts/*`
+
+The generated Markdown report includes:
+
+- an overview table per scenario
+- trimmed means, standard deviation, and coefficient of variation
+- automatic speedup and artifact-size comparisons between backends
 
 ## Current Scenarios
 
@@ -55,3 +62,9 @@ This scaffold intentionally compares the same task class for both backends: gene
 - `GraphMakie`: graph plotting, layout, and PNG export
 
 The backends target different output media, so this first scaffold is a practical starting point rather than a final authoritative performance ranking.
+
+## Measurement Notes
+
+- Smoke runs default to `warmup=2` and `samples=3`
+- Default benchmark runs use `warmup=2` and `samples=5`
+- The harness runs `GC.gc()` before each warmup and timed sample to reduce cross-run noise
