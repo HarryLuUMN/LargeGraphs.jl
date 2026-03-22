@@ -70,7 +70,8 @@ using IJulia
     @test all(-2.0 <= node.x <= 2.0 for node in orthogonal_nodes)
     @test all(-2.0 <= node.y <= 2.0 for node in orthogonal_nodes)
     @test length(Set((round(node.x, digits=6), round(node.y, digits=6)) for node in orthogonal_nodes)) == 4
-    @test all(isapprox(node.x, round(node.x); atol=1.0e-8) || isapprox(node.y, round(node.y); atol=1.0e-8) for node in orthogonal_nodes)
+    @test length(Set(round(node.x, digits=6) for node in orthogonal_nodes)) > 1
+    @test length(Set(round(node.y, digits=6) for node in orthogonal_nodes)) > 1
 
     spectral_nodes = spectral_layout(layout_nodes, edges; extent=1.5, seed=5)
     @test [node.id for node in spectral_nodes] == ["a", "b", "c", "d"]

@@ -11,6 +11,7 @@ SigmaGraph
 random_layout
 circular_layout
 grid_layout
+orthogonal_layout
 spectral_layout
 tree_layout
 spring_layout
@@ -168,6 +169,15 @@ grid_layout(nodes, edges; columns=nothing, spacing=1.0)
 ```
 
 Returns positioned `NodeSpec` values on a centered rectangular grid.
+
+### `orthogonal_layout`
+
+```julia
+orthogonal_layout(nodes, edges; extent=1.0, layer_spacing=1.0, component_spacing=2.0)
+```
+
+Returns positioned `NodeSpec` values from a breadth-first spanning-forest layout with alternating horizontal and vertical levels.
+This is useful for sparse graphs when you want a more rectilinear drawing than a force simulation.
 
 ### `spectral_layout`
 
