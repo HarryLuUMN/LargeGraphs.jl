@@ -45,6 +45,17 @@ using Graphs
     @test length(viz.nodes) == 2
     @test length(viz.edges) == 1
 
+    dense_config = SigmaConfig(profile=:dense)
+    @test dense_config.hide_edges_on_move == true
+    @test dense_config.label_density == 0.6
+    @test dense_config.max_node_size == 12.0
+    @test dense_config.min_node_size == 1.5
+
+    presentation_config = SigmaConfig(profile=:presentation, label_density=0.8)
+    @test presentation_config.render_edge_labels == true
+    @test presentation_config.label_density == 0.8
+    @test_throws "Unknown profile" SigmaConfig(profile=:unknown)
+
     random_nodes = random_layout(layout_nodes; seed=11, extent=2.0)
     @test random_nodes isa Vector{NodeSpec}
     @test [node.id for node in random_nodes] == ["a", "b", "c", "d"]
@@ -176,6 +187,20 @@ using Graphs
     @test staged_parts_viz isa SigmaGraph
     @test staged_parts_viz.id == "staged-parts"
 
+    staged_profiled_viz = assemble_graph(staged_layout; id="staged-profiled", profile=:large)
+    @test staged_profiled_viz.config.hide_edges_on_move == true
+    @test staged_profiled_viz.config.label_density == 0.35
+
+    staged_profiled_custom = assemble_graph(
+        staged_layout;
+        id="staged-profiled-custom",
+        profile=:dense,
+        config=SigmaConfig(height="460px", background="#f8fafc"),
+    )
+    @test staged_profiled_custom.config.height == "460px"
+    @test staged_profiled_custom.config.background == "#f8fafc"
+    @test staged_profiled_custom.config.hide_edges_on_move == true
+
     custom_viz = render(layout_nodes, edges; layout=(nodes, edges; shift=0.0) -> [
         NodeSpec(node.id; x=index + shift, y=-index, size=node.size, label=node.label, color=node.color, attributes=node.attributes)
         for (index, node) in pairs(nodes)
@@ -192,6 +217,17 @@ using Graphs
     @test graph_viz isa SigmaGraph
     @test [node.id for node in graph_viz.nodes] == ["1", "2", "3", "4"]
     @test Set((edge.source, edge.target) for edge in graph_viz.edges) == Set([("1", "2"), ("2", "3"), ("3", "4")])
+
+    profiled_render = render(layout_nodes, edges; profile=:large)
+    @test profiled_render.config.hide_edges_on_move == true
+    @test profiled_render.config.label_density == 0.35
+
+    overridden_profiled_render = render(layout_nodes, edges; profile=:large, label_density=0.9)
+    @test overridden_profiled_render.config.label_density == 0.9
+
+    profiled_graph = graph(layout_nodes, edges; profile=:dense)
+    @test profiled_graph.config.hide_edges_on_move == true
+    @test profiled_graph.config.label_density == 0.6
 
     mapped_graph = graph(
         graph_input;

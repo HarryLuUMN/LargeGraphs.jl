@@ -37,17 +37,26 @@ function assemble_graph(
     edges;
     id=string("sigma-", uuid4()),
     config=SigmaConfig(),
+    profile=:default,
     interaction_state=nothing,
     enable_selection=true,
     enable_tooltips=true,
     highlight_neighbors=true,
 )
     normalized_nodes, normalized_edges = _normalize_graph_inputs(nodes, edges)
+    resolved_profile = _normalize_profile(profile)
+    resolved_config = resolved_profile == :default ? config : SigmaConfig(
+        width=config.width,
+        height=config.height,
+        background=config.background,
+        camera_ratio=config.camera_ratio,
+        profile=resolved_profile,
+    )
     SigmaGraph(
         string(id),
         normalized_nodes,
         normalized_edges,
-        config,
+        resolved_config,
         _interaction_payload(
             interaction_state;
             enable_selection=enable_selection,
@@ -61,6 +70,7 @@ function assemble_graph(
     layouted::NamedTuple;
     id=string("sigma-", uuid4()),
     config=SigmaConfig(),
+    profile=:default,
     interaction_state=nothing,
     enable_selection=true,
     enable_tooltips=true,
@@ -72,6 +82,7 @@ function assemble_graph(
         layouted.edges;
         id=id,
         config=config,
+        profile=profile,
         interaction_state=interaction_state,
         enable_selection=enable_selection,
         enable_tooltips=enable_tooltips,
@@ -94,6 +105,7 @@ function graph(
     edges;
     id=string("sigma-", uuid4()),
     config=SigmaConfig(),
+    profile=:default,
     layout=nothing,
     interaction_state=nothing,
     enable_selection=true,
@@ -106,6 +118,7 @@ function graph(
         layouted;
         id=id,
         config=config,
+        profile=profile,
         interaction_state=interaction_state,
         enable_selection=enable_selection,
         enable_tooltips=enable_tooltips,
@@ -121,18 +134,20 @@ function _normalize_graph_inputs(nodes, edges)
 end
 
 function _build_render_config(;
-    width="100%",
-    height="700px",
-    background="#ffffff",
-    camera_ratio=1.0,
-    render_edge_labels=false,
-    hide_edges_on_move=false,
-    label_density=1.0,
-    label_grid_cell_size=80,
-    max_node_size=16.0,
-    min_node_size=2.0,
+    profile=:default,
+    width=nothing,
+    height=nothing,
+    background=nothing,
+    camera_ratio=nothing,
+    render_edge_labels=nothing,
+    hide_edges_on_move=nothing,
+    label_density=nothing,
+    label_grid_cell_size=nothing,
+    max_node_size=nothing,
+    min_node_size=nothing,
 )
     SigmaConfig(
+        profile=profile,
         width=width,
         height=height,
         background=background,
@@ -159,6 +174,7 @@ function graph(
     g::Graphs.AbstractGraph;
     id=string("sigma-", uuid4()),
     config=SigmaConfig(),
+    profile=:default,
     layout=nothing,
     interaction_state=nothing,
     enable_selection=true,
@@ -179,6 +195,7 @@ function graph(
         layouted;
         id=id,
         config=config,
+        profile=profile,
         interaction_state=interaction_state,
         enable_selection=enable_selection,
         enable_tooltips=enable_tooltips,
@@ -198,16 +215,17 @@ function render(
     edges;
     id=string("sigma-", uuid4()),
     layout=nothing,
-    width="100%",
-    height="700px",
-    background="#ffffff",
-    camera_ratio=1.0,
-    render_edge_labels=false,
-    hide_edges_on_move=false,
-    label_density=1.0,
-    label_grid_cell_size=80,
-    max_node_size=16.0,
-    min_node_size=2.0,
+    profile=:default,
+    width=nothing,
+    height=nothing,
+    background=nothing,
+    camera_ratio=nothing,
+    render_edge_labels=nothing,
+    hide_edges_on_move=nothing,
+    label_density=nothing,
+    label_grid_cell_size=nothing,
+    max_node_size=nothing,
+    min_node_size=nothing,
     interaction_state=nothing,
     enable_selection=true,
     enable_tooltips=true,
@@ -215,6 +233,7 @@ function render(
     layout_kwargs...,
 )
     config = _build_render_config(
+        profile=profile,
         width=width,
         height=height,
         background=background,
@@ -249,16 +268,17 @@ function render(
     layout=nothing,
     node_mapper=vertex -> (id=string(vertex),),
     edge_mapper=edge -> (source=string(Graphs.src(edge)), target=string(Graphs.dst(edge))),
-    width="100%",
-    height="700px",
-    background="#ffffff",
-    camera_ratio=1.0,
-    render_edge_labels=false,
-    hide_edges_on_move=false,
-    label_density=1.0,
-    label_grid_cell_size=80,
-    max_node_size=16.0,
-    min_node_size=2.0,
+    profile=:default,
+    width=nothing,
+    height=nothing,
+    background=nothing,
+    camera_ratio=nothing,
+    render_edge_labels=nothing,
+    hide_edges_on_move=nothing,
+    label_density=nothing,
+    label_grid_cell_size=nothing,
+    max_node_size=nothing,
+    min_node_size=nothing,
     interaction_state=nothing,
     enable_selection=true,
     enable_tooltips=true,
@@ -266,6 +286,7 @@ function render(
     layout_kwargs...,
 )
     config = _build_render_config(
+        profile=profile,
         width=width,
         height=height,
         background=background,

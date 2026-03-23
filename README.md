@@ -206,6 +206,23 @@ With `layout=:force_directed`, select the specific algorithm via `algorithm=`:
 - `:kamada_kawai`
 - `:forceatlas2`
 
+## Rendering Profiles
+
+The rendering pipeline accepts `profile=` in `SigmaConfig(...)`, `graph(...)`, `render(...)`, and `assemble_graph(...)`.
+
+Available profiles:
+
+- `:default` — current baseline viewer settings
+- `:dense` — lower label density and hide edges while moving for denser graphs
+- `:large` — more aggressive label reduction and smaller node sizing for larger graphs
+- `:presentation` — stronger labels and larger node sizing for demos or screenshots
+
+Explicit keyword arguments still override the profile defaults. For example:
+
+```julia
+viz = render(nodes, edges; profile=:large, label_density=0.8)
+```
+
 ### Accepted input forms
 
 Nodes can be provided as:
