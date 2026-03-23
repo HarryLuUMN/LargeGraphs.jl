@@ -63,12 +63,18 @@ Represents an edge in the rendered graph.
 ### `SigmaConfig`
 
 ```julia
-SigmaConfig(; width="100%", height="700px", background="#ffffff", camera_ratio=1.0,
+SigmaConfig(; profile=:default, width="100%", height="700px", background="#ffffff", camera_ratio=1.0,
               render_edge_labels=false, hide_edges_on_move=false, label_density=1.0,
               label_grid_cell_size=80, max_node_size=16.0, min_node_size=2.0)
 ```
 
 Controls the HTML container and the Sigma.js viewer settings exposed by the package.
+
+Built-in profiles:
+- `:default`
+- `:dense`
+- `:large`
+- `:presentation`
 
 ### `SigmaGraph`
 

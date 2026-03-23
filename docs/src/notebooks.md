@@ -95,6 +95,6 @@ neighbors of the selected node in the browser.
 ## Practical Advice
 
 - Keep labels sparse for large graphs.
-- Use `hide_edges_on_move=true` when panning feels sluggish.
+- Use `profile=:dense` or `profile=:large` when panning feels sluggish or labels become cluttered.
 - Use `:random`, `:circular`, `:grid`, `:spectral`, or `:tree` for cheaper layout options when the graph structure fits; force-directed layouts (`:spring`, `:force_directed`) are more expensive.
 - Save a standalone HTML copy when you need to share results with someone outside Julia.
