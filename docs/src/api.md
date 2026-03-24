@@ -18,7 +18,16 @@ spectral_layout
 tree_layout
 spring_layout
 force_directed_layout
+hierarchy_layout
 graph
+vertex_attribute_mapper
+edge_attribute_mapper
+recommend_profile
+timed_layout
+timed_assemble
+timed_render
+timed_export
+profile_pipeline
 render
 savehtml
 selected_node
@@ -234,6 +243,45 @@ Returns positioned `NodeSpec` values from a tree-oriented layout. Supported valu
 - `:radial`
 
 If `root` is omitted, the layout prefers nodes with zero indegree and otherwise picks a fallback root automatically.
+
+### `hierarchy_layout`
+
+```julia
+hierarchy_layout(nodes; parent_key=:parent, id_key=:id, algorithm=:layered, kwargs...)
+```
+
+Returns positioned `NodeSpec` values using parent references in each input node.
+
+### Graphs.jl bridging helpers
+
+```julia
+vertex_attribute_mapper(attributes; kwargs...)
+edge_attribute_mapper(attributes; kwargs...)
+```
+
+Build reusable mapper functions for `graph(g; node_mapper=..., edge_mapper=...)`
+and `render(g; ...)` from vertex/edge attribute lookup tables.
+
+### Profile recommendation
+
+```julia
+recommend_profile(nodes, edges)
+recommend_profile(g::Graphs.AbstractGraph)
+```
+
+Returns `:default`, `:dense`, or `:large` based on graph scale.
+
+### Staged timing API
+
+```julia
+timed_layout(nodes, edges; layout=nothing, layout_kwargs...)
+timed_assemble(nodes, edges; kwargs...)
+timed_render(nodes, edges; kwargs...)
+timed_export(path, graph::SigmaGraph; kwargs...)
+profile_pipeline(nodes, edges; layout=nothing, layout_kwargs=NamedTuple(), assemble_kwargs=NamedTuple(), render_kwargs=NamedTuple(), export_path=nothing, export_kwargs=NamedTuple())
+```
+
+Run individual stages or the full pipeline while collecting elapsed seconds and stage results.
 
 ### `spring_layout`
 
