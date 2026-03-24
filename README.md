@@ -195,6 +195,15 @@ julia --project=benchmarks benchmarks/scripts/run_smoke.jl
 - `force_directed_layout(nodes, edges; algorithm=:fruchterman_reingold, kwargs...)` runs a force-directed family with `:fruchterman_reingold`, `:kamada_kawai`, or `:forceatlas2`.
 - `spring_layout(nodes, edges; iterations, seed, extent, gravity, cooling)` remains as a compatibility alias for Fruchterman-Reingold.
 
+## Choose a layout
+
+See `docs/src/layout-guide.md` for the full guide. Short version:
+
+- `:random` for very large graphs and quick previews
+- `:spectral` for denser graphs when you want cheap structure-aware placement
+- `:tree` for rooted or hierarchical data
+- `:force_directed` for smaller graphs when visual structure matters more than speed
+
 ### Layout usage
 
 You can call a layout function directly when you want explicit positioned nodes:
