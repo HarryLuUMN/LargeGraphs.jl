@@ -37,6 +37,7 @@ layout engine.
 - Use [Choose a layout](layout-guide.md) when deciding between random, spectral, tree, and force-directed rendering paths.
 - Use [API reference](api.md) for constructor and function details.
 - Use [Notebook guide](notebooks.md) for IJulia and Jupyter workflows.
+- Use `examples/README.md` in the repository root when you want a workflow-oriented map of the example notebooks and scripts.
 - Use [Troubleshooting](troubleshooting.md) when rendering does not behave as expected.
 - Use the repository `benchmarks/` subproject for rendering benchmark scripts and results.
 

@@ -64,6 +64,7 @@ Start with:
 Start with:
 - `demo_layout_functions.ipynb`
 - then read `docs/src/layout-guide.md`
+- and compare against the staged workflow in `demo_staged_pipeline.ipynb` when you want to separate layout from rendering
 
 ### I care about notebook interactivity
 Start with:
