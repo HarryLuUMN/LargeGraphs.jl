@@ -22,7 +22,7 @@ using LargeGraphs
 Any `SigmaGraph` value renders as HTML in the notebook output area:
 
 ```julia
-viz = render(nodes, edges; layout=:force_directed, algorithm=:fruchterman_reingold, iterations=120, seed=7, height="600px", hide_edges_on_move=true)
+viz = render(nodes, edges; layout=:force_directed, algorithm=:fruchterman_reingold, iterations=120, seed=7, profile=:dense, height="600px")
 display(viz)
 ```
 

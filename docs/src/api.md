@@ -143,6 +143,7 @@ return any supported node or edge input form.
 
 Both `graph` methods also accept:
 
+- `profile`
 - `interaction_state`
 - `enable_selection`
 - `enable_tooltips`

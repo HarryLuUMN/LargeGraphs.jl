@@ -174,7 +174,7 @@ julia --project=benchmarks benchmarks/scripts/run_smoke.jl
 
 - `NodeSpec(id; x, y, size, label, color, attributes)`
 - `EdgeSpec(source, target; id, size, label, color, attributes)`
-- `SigmaConfig(; width, height, background, camera_ratio, render_edge_labels, hide_edges_on_move, label_density, label_grid_cell_size, max_node_size, min_node_size)`
+- `SigmaConfig(; profile, width, height, background, camera_ratio, render_edge_labels, hide_edges_on_move, label_density, label_grid_cell_size, max_node_size, min_node_size)`
 
 ### Main functions
 
@@ -429,6 +429,11 @@ Source pages:
 - `src/LargeGraphs.jl`: package source and public API.
 - `assets/sigma-viewer.js`: browser bootstrap for Sigma.js rendering.
 - `examples/demo_notebook.ipynb`: notebook demo.
+- `examples/demo_large_graph.jl`: script demo with standalone export.
+- `test/runtests.jl`: package tests.
+_large_graph.jl`: script demo with standalone export.
+- `test/runtests.jl`: package tests.
+tebook.ipynb`: notebook demo.
 - `examples/demo_large_graph.jl`: script demo with standalone export.
 - `test/runtests.jl`: package tests.
 _large_graph.jl`: script demo with standalone export.
