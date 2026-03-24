@@ -11,6 +11,9 @@ end
 struct BenchmarkResult
     backend::String
     scenario::String
+    family::Symbol
+    configured_density::Float64
+    realized_density::Float64
     nodes::Int
     edges::Int
     total_samples::Vector{Float64}
@@ -84,6 +87,9 @@ function _run_single(backend::BenchmarkBackend, graph, scenario::Scenario, confi
     BenchmarkResult(
         backend_name(backend),
         scenario.name,
+        scenario.family,
+        scenario.density,
+        _graph_density(graph),
         nv(graph),
         ne(graph),
         total_timings_ms,
@@ -109,6 +115,9 @@ function _to_row(result::BenchmarkResult)
     Dict(
         "backend" => result.backend,
         "scenario" => result.scenario,
+        "family" => String(result.family),
+        "configured_density" => result.configured_density,
+        "realized_density" => result.realized_density,
         "nodes" => result.nodes,
         "edges" => result.edges,
         "artifact_bytes" => result.artifact_bytes,
@@ -142,8 +151,14 @@ function _print_summary(results::Vector{BenchmarkResult}, summary_path::Abstract
             "$(stage_name)=$(round(_trimmed_mean(samples); digits=2)) ms"
             for (stage_name, samples) in sort(collect(result.stage_samples); by=first)
         ]
-        println("- $(result.scenario) | $(result.backend) | total_mean=$(total_mean_ms) ms, total_trimmed_mean=$(total_trimmed_mean_ms) ms, $(join(stage_parts, ", ")), artifact=$(result.artifact_bytes) bytes")
+        println("- $(result.scenario) | $(result.backend) | family=$(result.family), density=$(round(result.realized_density; digits=4)), total_mean=$(total_mean_ms) ms, total_trimmed_mean=$(total_trimmed_mean_ms) ms, $(join(stage_parts, ", ")), artifact=$(result.artifact_bytes) bytes")
     end
+end
+
+function _graph_density(graph)
+    n = nv(graph)
+    n <= 1 && return 0.0
+    return (2 * ne(graph)) / (n * (n - 1))
 end
 
 function _trimmed_mean(samples::Vector{Float64})
@@ -188,7 +203,7 @@ function _write_markdown_summary(
         stage_name, stage_share = _largest_stage_share(fastest)
         push!(
             lines,
-            "| `$(scenario_name)` | $(fastest.nodes) | $(fastest.edges) | $(fastest.backend) | $(_fmt(speedup; digits=2))x | $(smallest.backend) | $(_fmt(size_ratio; digits=2))x | $(stage_name) ($(_fmt(stage_share; digits=1))%) |",
+            "| `$(scenario_name)` | `$(fastest.family)` | $(fastest.nodes) | $(fastest.edges) | $(_fmt(fastest.realized_density; digits=4)) | $(fastest.backend) | $(_fmt(speedup; digits=2))x | $(smallest.backend) | $(_fmt(size_ratio; digits=2))x | $(stage_name) ($(_fmt(stage_share; digits=1))%) |",
         )
     end
 
