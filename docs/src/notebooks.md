@@ -85,6 +85,7 @@ neighbors of the selected node in the browser.
 
 ## Demos in This Repository
 
+- `examples/demo_staged_pipeline.ipynb` shows the recommended staged workflow.
 - `examples/demo_notebook.ipynb` shows notebook rendering workflows and large-graph viewing.
 - `examples/demo_layout_functions.ipynb` shows direct layout functions returning positioned nodes.
 - `examples/demo_graphsjl.ipynb` shows the `Graphs.jl` input workflow.

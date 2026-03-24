@@ -45,26 +45,41 @@ If the package is installed in one environment and the notebook kernel points
 at another, `using LargeGraphs` will fail inside the notebook even if it works
 from the terminal.
 
-### Graphs.jl integration
+## Primary workflows
 
-`LargeGraphs` depends on [`Graphs.jl`](https://github.com/JuliaGraphs/Graphs.jl)
-and can render graph objects directly:
+Use the staged pipeline as the default workflow, then choose one-shot rendering
+or direct `Graphs.jl` input when that better matches your notebook.
+
+| Workflow | Best for | Core calls |
+| --- | --- | --- |
+| Staged pipeline (recommended) | Reusing one layout across multiple renders/exports | `layout_graph` -> `assemble_graph` |
+| One-shot convenience | Fast iteration in a single call | `render` |
+| `Graphs.jl` input | Existing `Graphs.jl` projects | `render(g; node_mapper=..., edge_mapper=...)` |
+
+### Staged pipeline (recommended)
 
 ```julia
-using Graphs
 using LargeGraphs
 
-g = path_graph(6)
-
-viz = render(
-    g;
-    layout=:circular,
-    node_mapper=v -> (id="v$v", label="Node $v", size=1.5),
-    edge_mapper=e -> (source="v$(src(e))", target="v$(dst(e))", color="#94a3b8"),
+layouted = layout_graph(
+    nodes,
+    edges;
+    layout=:force_directed,
+    algorithm=:forceatlas2,
+    iterations=60,
+    seed=7,
 )
+
+viz = assemble_graph(
+    layouted;
+    config=SigmaConfig(height="520px", background="#f8fafc"),
+)
+
+display(viz)
+savehtml("graph.html", viz)
 ```
 
-## Quick Start
+### One-shot convenience
 
 ```julia
 using LargeGraphs
@@ -97,6 +112,22 @@ display(viz)
 savehtml("graph.html", viz)
 ```
 
+### Graphs.jl input
+
+```julia
+using Graphs
+using LargeGraphs
+
+g = path_graph(6)
+
+viz = render(
+    g;
+    layout=:circular,
+    node_mapper=v -> (id="v$v", label="Node $v", size=1.5),
+    edge_mapper=e -> (source="v$(src(e))", target="v$(dst(e))", color="#94a3b8"),
+)
+```
+
 ## Notebook Usage
 
 `SigmaGraph` implements HTML display, so a notebook cell only needs to evaluate
@@ -104,8 +135,10 @@ or `display` the value returned by `render(...)` or `graph(...)`.
 
 The repository includes:
 
+- `examples/demo_staged_pipeline.ipynb` for the recommended staged workflow.
 - `examples/demo_notebook.ipynb` for an IJulia notebook workflow.
 - `examples/demo_layout_functions.ipynb` for direct layout function demos.
+- `examples/demo_graphsjl.ipynb` for direct `Graphs.jl` rendering.
 - `examples/demo_interactions.ipynb` for click/hover interaction and Julia-side state updates.
 - `examples/demo_large_graph.jl` for script-based standalone export.
 
