@@ -85,6 +85,9 @@ neighbors of the selected node in the browser.
 
 ## Demos in This Repository
 
+For a workflow-oriented overview of the repository examples, see `examples/README.md` in the project root.
+
+
 - `examples/demo_staged_pipeline.ipynb` shows the recommended staged workflow.
 - `examples/demo_notebook.ipynb` shows notebook rendering workflows and large-graph viewing.
 - `examples/demo_layout_functions.ipynb` shows direct layout functions returning positioned nodes.

@@ -141,6 +141,7 @@ The repository includes:
 - `examples/demo_graphsjl.ipynb` for direct `Graphs.jl` rendering.
 - `examples/demo_interactions.ipynb` for click/hover interaction and Julia-side state updates.
 - `examples/demo_large_graph.jl` for script-based standalone export.
+- `examples/README.md` for a workflow-oriented example index.
 
 Typical notebook setup:
 
