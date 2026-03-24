@@ -1,18 +1,21 @@
 """
-    savehtml(path, graph::SigmaGraph)
+    savehtml(path, graph::SigmaGraph; self_contained=true, runtime=:auto)
     savehtml(path, nodes, edges; kwargs...)
 
 Write a standalone HTML document containing the graph viewer.
+
+When `self_contained=true`, the export embeds an offline canvas runtime that
+does not fetch Sigma.js from a CDN.
 """
-function savehtml(path::AbstractString, value::SigmaGraph)
+function savehtml(path::AbstractString, value::SigmaGraph; self_contained=true, runtime=:auto)
     open(path, "w") do io
-        write(io, _standalone_html(value))
+        write(io, _standalone_html(value; self_contained=self_contained, runtime=runtime))
     end
     path
 end
 
-function savehtml(path::AbstractString, nodes, edges; kwargs...)
-    savehtml(path, render(nodes, edges; kwargs...))
+function savehtml(path::AbstractString, nodes, edges; self_contained=true, runtime=:auto, kwargs...)
+    savehtml(path, render(nodes, edges; kwargs...); self_contained=self_contained, runtime=runtime)
 end
 
 function Base.show(io::IO, ::MIME"text/html", value::SigmaGraph)
@@ -76,11 +79,11 @@ function _config_payload(config::SigmaConfig)
     )
 end
 
-function _html(value::SigmaGraph)
+function _html(value::SigmaGraph; runtime=:sigma)
     graph_id = _escape_html_attribute(value.id)
     payload_id = _escape_html_attribute("$(value.id)-payload")
     payload = _escape_script_data(JSON3.write(_graph_payload(value)))
-    bootstrap = read(joinpath(pkgdir(@__MODULE__), "assets", "sigma-viewer.js"), String)
+    bootstrap, invocation = _runtime_bootstrap(runtime, value.id)
     """
     <div id="$(graph_id)" class="large-graphs-jl-root" style="width: $(_escape_html_attribute(value.config.width));">
       <div class="large-graphs-jl-stage" style="width: 100%; height: $(_escape_html_attribute(value.config.height)); background: $(_escape_html_attribute(value.config.background));"></div>
@@ -88,12 +91,13 @@ function _html(value::SigmaGraph)
     <script type="application/json" id="$(payload_id)">$(payload)</script>
     <script>
     $(bootstrap)
-    void window.LargeGraphs.render("$(_escape_javascript_string(value.id))");
+    $(invocation)
     </script>
     """
 end
 
-function _standalone_html(value::SigmaGraph)
+function _standalone_html(value::SigmaGraph; self_contained=true, runtime=:auto)
+    resolved_runtime = _resolve_export_runtime(runtime; self_contained=self_contained)
     """
     <!doctype html>
     <html>
@@ -103,10 +107,24 @@ function _standalone_html(value::SigmaGraph)
       <title>LargeGraphs Demo</title>
     </head>
     <body>
-    $(_html(value))
+    $(_html(value; runtime=resolved_runtime))
     </body>
     </html>
     """
+end
+
+_resolve_export_runtime(runtime::Symbol; self_contained::Bool) = runtime === :auto ? (self_contained ? :offline_canvas : :sigma) : runtime
+
+function _runtime_bootstrap(runtime::Symbol, id::String)
+    runtime === :sigma && return (
+        read(joinpath(pkgdir(@__MODULE__), "assets", "sigma-viewer.js"), String),
+        "void window.LargeGraphs.render(\"$(_escape_javascript_string(id))\");",
+    )
+    runtime === :offline_canvas && return (
+        read(joinpath(pkgdir(@__MODULE__), "assets", "offline-viewer.js"), String),
+        "void window.LargeGraphsOffline.render(\"$(_escape_javascript_string(id))\");",
+    )
+    error("Unsupported HTML runtime: $(runtime)")
 end
 
 function _escape_html_attribute(value)
