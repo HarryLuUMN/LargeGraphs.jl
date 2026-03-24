@@ -111,12 +111,27 @@ const _SIGMA_PROFILES = Dict{Symbol, NamedTuple{(:camera_ratio, :render_edge_lab
 
 function _normalize_profile(profile)
     normalized = profile isa Symbol ? profile : Symbol(lowercase(string(profile)))
+    normalized === :auto && return :auto
     haskey(_SIGMA_PROFILES, normalized) && return normalized
     supported = join(sort!(collect(string(key) for key in keys(_SIGMA_PROFILES))), ", ")
-    throw(ArgumentError("Unknown profile: $(repr(profile)). Supported profiles: $(supported)."))
+    throw(ArgumentError("Unknown profile: $(repr(profile)). Supported profiles: $(supported), auto."))
 end
 
-_profile_settings(profile) = _SIGMA_PROFILES[_normalize_profile(profile)]
+function _recommended_profile(node_count::Integer, edge_count::Integer)
+    nodes = max(Int(node_count), 0)
+    edges = max(Int(edge_count), 0)
+    density = nodes == 0 ? 0.0 : edges / nodes
+    (nodes >= 1_200 || edges >= 6_000 || (nodes >= 600 && density >= 8.0)) && return :large
+    (nodes >= 400 || edges >= 1_500 || (nodes >= 250 && density >= 5.0)) && return :dense
+    :default
+end
+
+function _resolve_profile(profile, node_count::Integer, edge_count::Integer)
+    normalized = _normalize_profile(profile)
+    normalized === :auto ? _recommended_profile(node_count, edge_count) : normalized
+end
+
+_profile_settings(profile, node_count::Integer=0, edge_count::Integer=0) = _SIGMA_PROFILES[_resolve_profile(profile, node_count, edge_count)]
 
 NodeSpec(id; x=0.0, y=0.0, size=1.0, label=nothing, color=nothing, attributes=Dict{String, Any}()) =
     NodeSpec(string(id), Float64(x), Float64(y), Float64(size), _string_or_nothing(label), _string_or_nothing(color), Dict{String, Any}(string(k) => v for (k, v) in pairs(attributes)))
@@ -134,6 +149,8 @@ EdgeSpec(source, target; id=nothing, size=1.0, label=nothing, color=nothing, att
 
 function SigmaConfig(;
     profile=:default,
+    node_count=0,
+    edge_count=0,
     width=nothing,
     height=nothing,
     background=nothing,
@@ -145,7 +162,7 @@ function SigmaConfig(;
     max_node_size=nothing,
     min_node_size=nothing,
 )
-    settings = _profile_settings(profile)
+    settings = _profile_settings(profile, node_count, edge_count)
     SigmaConfig(
         string(isnothing(width) ? "100%" : width),
         string(isnothing(height) ? "700px" : height),
