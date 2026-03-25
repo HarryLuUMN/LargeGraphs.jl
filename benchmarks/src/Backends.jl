@@ -37,7 +37,7 @@ function run_backend_once(
         LargeGraphs.layout_graph(
             graph;
             layout=:force_directed,
-            algorithm=:fruchterman_reingold,
+            algorithm=:sfdp,
             iterations=80,
             seed=layout_seed,
         )

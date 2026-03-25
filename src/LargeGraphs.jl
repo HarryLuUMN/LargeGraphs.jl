@@ -9,6 +9,7 @@ module LargeGraphs
 using Graphs
 using JSON3
 using LinearAlgebra
+using NetworkLayout
 using Random
 using UUIDs
 

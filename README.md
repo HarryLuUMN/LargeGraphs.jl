@@ -138,6 +138,7 @@ The repository includes:
 - `examples/demo_staged_pipeline.ipynb` for the recommended staged workflow.
 - `examples/demo_notebook.ipynb` for an IJulia notebook workflow.
 - `examples/demo_layout_functions.ipynb` for direct layout function demos.
+- `examples/demo_networklayout_layouts.ipynb` for the `NetworkLayout.jl`-backed fast layout options.
 - `examples/demo_graphsjl.ipynb` for direct `Graphs.jl` rendering.
 - `examples/demo_interactions.ipynb` for click/hover interaction and Julia-side state updates.
 - `examples/demo_large_graph.jl` for script-based standalone export.
@@ -167,6 +168,32 @@ Run a quick smoke benchmark from the repository root:
 ```bash
 julia --project=benchmarks benchmarks/scripts/run_smoke.jl
 ```
+
+## NetworkLayout Integration
+
+`LargeGraphs` now supports faster force-directed layouts backed by
+[`NetworkLayout.jl`](https://juliagraphs.org/NetworkLayout.jl/stable/). This is
+useful when you want a quicker layout pass without changing the rest of the
+rendering pipeline.
+
+Typical usage:
+
+```julia
+viz = render(
+    nodes,
+    edges;
+    layout=:force_directed,
+    algorithm=:sfdp,
+    iterations=80,
+    seed=7,
+)
+```
+
+Current status:
+
+- `:network_spring` and `:sfdp` are available through `force_directed_layout`
+- they are intended as faster alternatives to the package's built-in iterative layouts
+- the integration is alpha-stage and may still need tuning for layout aesthetics on larger graphs
 
 ## API Overview
 
@@ -248,6 +275,8 @@ With `layout=:force_directed`, select the specific algorithm via `algorithm=`:
 - `:fruchterman_reingold`
 - `:kamada_kawai`
 - `:forceatlas2`
+- `:network_spring`
+- `:sfdp`
 
 ## Rendering Profiles
 

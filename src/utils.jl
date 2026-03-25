@@ -39,6 +39,21 @@ function _edge_indices(nodes::Vector{NodeSpec}, edges::Vector{EdgeSpec})
     indexed
 end
 
+function _layout_graph_for_networklayout(nodes::Vector{NodeSpec}, edges::Vector{EdgeSpec})
+    graph = SimpleGraph(length(nodes))
+    for (source, target) in _edge_indices(nodes, edges)
+        add_edge!(graph, source, target)
+    end
+    graph
+end
+
+function _points_to_nodes(nodes::Vector{NodeSpec}, points; extent=1.0)
+    xs = Float64[point[1] for point in points]
+    ys = Float64[point[2] for point in points]
+    xs, ys = _rescale_positions(xs, ys; extent=extent)
+    [_with_position(node, xs[index], ys[index]) for (index, node) in pairs(nodes)]
+end
+
 function _validate_graph_inputs(nodes::Vector{NodeSpec}, edges::Vector{EdgeSpec})
     seen = Set{String}()
     duplicates = String[]
@@ -97,8 +112,8 @@ function _rescale_positions(xs::Vector{Float64}, ys::Vector{Float64}; extent=1.0
     y_center = (max_y + min_y) / 2
     scale = 2 * extent / span
     (
-        [(x - x_center) * scale for x in xs],
-        [(y - y_center) * scale for y in ys],
+        [clamp((x - x_center) * scale, -extent, extent) for x in xs],
+        [clamp((y - y_center) * scale, -extent, extent) for y in ys],
     )
 end
 

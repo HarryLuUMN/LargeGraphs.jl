@@ -161,6 +161,18 @@ using Graphs
     @test all(-1.5 <= node.y <= 1.5 for node in fa2_nodes)
     @test length(Set((round(node.x, digits=6), round(node.y, digits=6)) for node in fa2_nodes)) == 4
 
+    network_spring_nodes = force_directed_layout(layout_nodes, edges; algorithm=:network_spring, iterations=40, seed=5, extent=1.5)
+    @test [node.id for node in network_spring_nodes] == ["a", "b", "c", "d"]
+    @test all(-1.5 <= node.x <= 1.5 for node in network_spring_nodes)
+    @test all(-1.5 <= node.y <= 1.5 for node in network_spring_nodes)
+    @test length(Set((round(node.x, digits=6), round(node.y, digits=6)) for node in network_spring_nodes)) == 4
+
+    sfdp_nodes = force_directed_layout(layout_nodes, edges; algorithm=:sfdp, iterations=40, seed=5, extent=1.5)
+    @test [node.id for node in sfdp_nodes] == ["a", "b", "c", "d"]
+    @test all(-1.5 <= node.x <= 1.5 for node in sfdp_nodes)
+    @test all(-1.5 <= node.y <= 1.5 for node in sfdp_nodes)
+    @test length(Set((round(node.x, digits=6), round(node.y, digits=6)) for node in sfdp_nodes)) == 4
+
     circular_viz = render(layout_nodes, edges; layout=:circular)
     @test circular_viz isa SigmaGraph
     @test all(isapprox(sqrt(node.x^2 + node.y^2), 1.0; atol=1.0e-8) for node in circular_viz.nodes)

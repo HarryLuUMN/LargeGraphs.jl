@@ -60,7 +60,7 @@ You can customize scenario sizes and density by editing `src/Scenarios.jl` or by
 
 This scaffold intentionally compares the same task class for both backends: generate a visual artifact from a graph scenario.
 
-- `LargeGraphs`: layout, graph assembly, and standalone HTML export
+- `LargeGraphs`: `NetworkLayout.jl`-backed force layout, graph assembly, and standalone HTML export
 - `GraphMakie`: plot construction and PNG export
 
 The backends target different output media, so this first scaffold is a practical starting point rather than a final authoritative performance ranking.

@@ -108,6 +108,8 @@ Supported algorithms:
 - `:fruchterman_reingold` (same core as `spring_layout`)
 - `:kamada_kawai`
 - `:forceatlas2`
+- `:network_spring`
+- `:sfdp`
 """
 function force_directed_layout(nodes, edges; algorithm=:fruchterman_reingold, kwargs...)
     _force_directed_layout(_normalize_nodes(nodes), _normalize_edges(edges); algorithm=algorithm, kwargs...)
@@ -605,6 +607,8 @@ function _force_directed_layout(nodes::Vector{NodeSpec}, edges::Vector{EdgeSpec}
     selected === :fruchterman_reingold && return _fruchterman_reingold_layout(nodes, edges; kwargs...)
     selected === :kamada_kawai && return _kamada_kawai_layout(nodes, edges; kwargs...)
     selected === :forceatlas2 && return _forceatlas2_layout(nodes, edges; kwargs...)
+    selected === :network_spring && return _network_spring_layout(nodes, edges; kwargs...)
+    selected === :sfdp && return _network_sfdp_layout(nodes, edges; kwargs...)
     error("Unsupported force-directed algorithm: $(algorithm)")
 end
 
@@ -614,6 +618,9 @@ function _force_directed_algorithm(algorithm::Symbol)
     algorithm === :kamada_kawai && return :kamada_kawai
     algorithm === :forceatlas2 && return :forceatlas2
     algorithm === :force_atlas2 && return :forceatlas2
+    algorithm === :network_spring && return :network_spring
+    algorithm === :networklayout_spring && return :network_spring
+    algorithm === :sfdp && return :sfdp
     error("Unsupported force-directed algorithm: $(algorithm)")
 end
 
@@ -829,4 +836,44 @@ function _forceatlas2_layout(
 
     xs, ys = _rescale_positions(xs, ys; extent=extent)
     [_with_position(node, xs[index], ys[index]) for (index, node) in pairs(nodes)]
+end
+
+function _network_spring_layout(
+    nodes::Vector{NodeSpec},
+    edges::Vector{EdgeSpec};
+    iterations=100,
+    seed=nothing,
+    extent=1.0,
+    C=2.0,
+)
+    count = length(nodes)
+    count == 0 && return NodeSpec[]
+    count == 1 && return [_with_position(only(nodes), 0.0, 0.0)]
+    graph = _layout_graph_for_networklayout(nodes, edges)
+    points = NetworkLayout.Spring(iterations=max(1, Int(iterations)), seed=seed, C=Float64(C))(graph)
+    _points_to_nodes(nodes, points; extent=extent)
+end
+
+function _network_sfdp_layout(
+    nodes::Vector{NodeSpec},
+    edges::Vector{EdgeSpec};
+    iterations=100,
+    seed=nothing,
+    extent=1.0,
+    tol=0.01,
+    C=0.2,
+    K=1.0,
+)
+    count = length(nodes)
+    count == 0 && return NodeSpec[]
+    count == 1 && return [_with_position(only(nodes), 0.0, 0.0)]
+    graph = _layout_graph_for_networklayout(nodes, edges)
+    points = NetworkLayout.SFDP(
+        iterations=max(1, Int(iterations)),
+        seed=seed,
+        tol=Float64(tol),
+        C=Float64(C),
+        K=Float64(K),
+    )(graph)
+    _points_to_nodes(nodes, points; extent=extent)
 end

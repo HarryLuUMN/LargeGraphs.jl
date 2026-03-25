@@ -304,6 +304,12 @@ Supported values for `algorithm`:
 - `:fruchterman_reingold`
 - `:kamada_kawai`
 - `:forceatlas2`
+- `:network_spring`
+- `:sfdp`
+
+The `:network_spring` and `:sfdp` options are backed by `NetworkLayout.jl` and
+are currently the recommended fast-path choices when layout throughput matters
+more than strict continuity with the older built-in force solvers.
 
 ### `savehtml`
 
