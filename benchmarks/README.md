@@ -43,6 +43,7 @@ Results are written to:
 The generated Markdown report includes:
 
 - an overview table per scenario
+- scenario family and both configured / realized density
 - total timings plus per-stage timing breakdowns
 - trimmed means, standard deviation, and coefficient of variation
 - automatic speedup and artifact-size comparisons between backends

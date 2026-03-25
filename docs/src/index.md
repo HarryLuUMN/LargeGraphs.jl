@@ -5,6 +5,18 @@ It is designed for notebook-first exploration with the option to export
 standalone HTML snapshots, and it now includes a small batch of built-in layout
 algorithms for basic graph drawing.
 
+## Primary Workflow
+
+The recommended default is the staged pipeline:
+
+1. `layout_graph(...)` to normalize data and compute coordinates.
+2. `assemble_graph(...)` to build a `SigmaGraph` from the layout result.
+3. `display(...)` and optionally `savehtml(...)`.
+
+Use `render(...)` when you want a one-shot convenience call, and use
+`render(g::Graphs.AbstractGraph; ...)` when your project already starts from a
+`Graphs.jl` graph.
+
 ## Scope
 
 This package is intentionally small:
@@ -21,8 +33,11 @@ layout engine.
 
 ## Start Here
 
+- Use [Pipeline guide](pipeline.md) for workflow selection and staged-first usage.
+- Use [Choose a layout](layout-guide.md) when deciding between random, spectral, tree, and force-directed rendering paths.
 - Use [API reference](api.md) for constructor and function details.
 - Use [Notebook guide](notebooks.md) for IJulia and Jupyter workflows.
+- Use `examples/README.md` in the repository root when you want a workflow-oriented map of the example notebooks and scripts.
 - Use [Troubleshooting](troubleshooting.md) when rendering does not behave as expected.
 - Use the repository `benchmarks/` subproject for rendering benchmark scripts and results.
 

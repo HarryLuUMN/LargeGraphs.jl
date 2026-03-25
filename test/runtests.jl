@@ -45,6 +45,17 @@ using Graphs
     @test length(viz.nodes) == 2
     @test length(viz.edges) == 1
 
+    dense_config = SigmaConfig(profile=:dense)
+    @test dense_config.hide_edges_on_move == true
+    @test dense_config.label_density == 0.6
+    @test dense_config.max_node_size == 12.0
+    @test dense_config.min_node_size == 1.5
+
+    presentation_config = SigmaConfig(profile=:presentation, label_density=0.8)
+    @test presentation_config.render_edge_labels == true
+    @test presentation_config.label_density == 0.8
+    @test_throws "Unknown profile" SigmaConfig(profile=:unknown)
+
     random_nodes = random_layout(layout_nodes; seed=11, extent=2.0)
     @test random_nodes isa Vector{NodeSpec}
     @test [node.id for node in random_nodes] == ["a", "b", "c", "d"]
@@ -88,6 +99,18 @@ using Graphs
     @test all(-1.5 <= node.x <= 1.5 for node in layered_tree_nodes)
     @test all(-1.5 <= node.y <= 1.5 for node in layered_tree_nodes)
 
+    layered_tree_left_right = tree_layout(tree_nodes, tree_edges; algorithm=:layered, root="root", orientation=:left_right, extent=1.5)
+    layered_tree_left_right_positions = Dict(node.id => node.x for node in layered_tree_left_right)
+    @test layered_tree_left_right_positions["root"] < layered_tree_left_right_positions["left"]
+    @test layered_tree_left_right_positions["left"] < layered_tree_left_right_positions["left-left"]
+
+    layered_tree_bottom_up = tree_layout(tree_nodes, tree_edges; algorithm=:layered, root="root", orientation=:bottom_up, extent=1.5)
+    bottom_up_depths = Dict(node.id => node.y for node in layered_tree_bottom_up)
+    @test bottom_up_depths["root"] < bottom_up_depths["left"]
+
+    degree_sorted_tree = tree_layout(tree_nodes, tree_edges; algorithm=:layered, root="root", sort_children=:degree, extent=1.5)
+    @test degree_sorted_tree isa Vector{NodeSpec}
+
     radial_tree_nodes = tree_layout(tree_nodes, tree_edges; algorithm=:radial, root="root", extent=1.5)
     radial_radii = Dict(node.id => sqrt(node.x^2 + node.y^2) for node in radial_tree_nodes)
     @test radial_radii["root"] < radial_radii["left"]
@@ -97,6 +120,22 @@ using Graphs
     @test radial_radii["right-left"] > radial_radii["right"]
     @test all(-1.5 <= node.x <= 1.5 for node in radial_tree_nodes)
     @test all(-1.5 <= node.y <= 1.5 for node in radial_tree_nodes)
+
+    hierarchy_nodes = [
+        (id="root", label="Root", parent=nothing),
+        (id="left", label="Left", parent="root"),
+        (id="right", label="Right", parent="root"),
+        (id="left-left", label="LeftLeft", parent="left"),
+        (id="left-right", label="LeftRight", parent="left"),
+        (id="right-left", label="RightLeft", parent="right"),
+    ]
+    hierarchy_layouted = hierarchy_layout(hierarchy_nodes; algorithm=:layered, root="root", orientation=:left_right, extent=1.5)
+    hierarchy_positions = Dict(node.id => node.x for node in hierarchy_layouted)
+    @test hierarchy_positions["root"] < hierarchy_positions["left"]
+    @test hierarchy_positions["left"] < hierarchy_positions["left-left"]
+
+    hierarchy_viz = render(hierarchy_nodes, EdgeSpec[]; layout=:hierarchy, algorithm=:layered, root="root", extent=1.2)
+    @test hierarchy_viz isa SigmaGraph
 
     spring_nodes = spring_layout(layout_nodes, edges; iterations=40, seed=5, extent=1.5)
     @test [node.id for node in spring_nodes] == ["a", "b", "c", "d"]
@@ -176,6 +215,59 @@ using Graphs
     @test staged_parts_viz isa SigmaGraph
     @test staged_parts_viz.id == "staged-parts"
 
+    timed_layout_stage = timed_layout(layout_nodes, edges; layout=:grid, columns=2)
+    @test timed_layout_stage.stage == :layout
+    @test timed_layout_stage.seconds >= 0.0
+    @test timed_layout_stage.result.nodes isa Vector{NodeSpec}
+
+    timed_assemble_stage = timed_assemble(timed_layout_stage.result; id="timed-assemble")
+    @test timed_assemble_stage.stage == :assemble
+    @test timed_assemble_stage.seconds >= 0.0
+    @test timed_assemble_stage.result isa SigmaGraph
+    @test timed_assemble_stage.result.id == "timed-assemble"
+
+    timed_render_stage = timed_render(layout_nodes, edges; layout=:grid, columns=2)
+    @test timed_render_stage.stage == :render
+    @test timed_render_stage.seconds >= 0.0
+    @test timed_render_stage.result isa SigmaGraph
+
+    timed_output = joinpath(mktempdir(), "timed-export.html")
+    timed_export_stage = timed_export(timed_output, timed_render_stage.result)
+    @test timed_export_stage.stage == :export
+    @test timed_export_stage.seconds >= 0.0
+    @test isfile(timed_export_stage.result)
+
+    profiled_pipeline = profile_pipeline(
+        layout_nodes,
+        edges;
+        layout=:grid,
+        layout_kwargs=(columns=2,),
+        assemble_kwargs=(id="profiled-pipeline",),
+        render_kwargs=(height="460px",),
+        export_path=joinpath(mktempdir(), "profiled-pipeline.html"),
+    )
+    @test profiled_pipeline.timings[:layout] >= 0.0
+    @test profiled_pipeline.timings[:assemble] >= 0.0
+    @test profiled_pipeline.timings[:render] >= 0.0
+    @test profiled_pipeline.timings[:export] >= 0.0
+    @test profiled_pipeline.assemble.result.id == "profiled-pipeline"
+    @test profiled_pipeline.render.result.config.height == "460px"
+    @test isfile(profiled_pipeline.export_stage.result)
+
+    staged_profiled_viz = assemble_graph(staged_layout; id="staged-profiled", profile=:large)
+    @test staged_profiled_viz.config.hide_edges_on_move == true
+    @test staged_profiled_viz.config.label_density == 0.35
+
+    staged_profiled_custom = assemble_graph(
+        staged_layout;
+        id="staged-profiled-custom",
+        profile=:dense,
+        config=SigmaConfig(height="460px", background="#f8fafc"),
+    )
+    @test staged_profiled_custom.config.height == "460px"
+    @test staged_profiled_custom.config.background == "#f8fafc"
+    @test staged_profiled_custom.config.hide_edges_on_move == true
+
     custom_viz = render(layout_nodes, edges; layout=(nodes, edges; shift=0.0) -> [
         NodeSpec(node.id; x=index + shift, y=-index, size=node.size, label=node.label, color=node.color, attributes=node.attributes)
         for (index, node) in pairs(nodes)
@@ -192,6 +284,34 @@ using Graphs
     @test graph_viz isa SigmaGraph
     @test [node.id for node in graph_viz.nodes] == ["1", "2", "3", "4"]
     @test Set((edge.source, edge.target) for edge in graph_viz.edges) == Set([("1", "2"), ("2", "3"), ("3", "4")])
+    @test recommend_profile(graph_input) == :default
+
+    profiled_render = render(layout_nodes, edges; profile=:large)
+    @test profiled_render.config.hide_edges_on_move == true
+    @test profiled_render.config.label_density == 0.35
+
+    @test recommend_profile(layout_nodes, edges) == :default
+
+    dense_profile_nodes = [(id="n$(index)",) for index in 1:600]
+    dense_profile_edges = [(source="n$(index)", target="n$(index + 1)") for index in 1:599]
+    @test recommend_profile(dense_profile_nodes, dense_profile_edges) == :dense
+    auto_profiled_dense = render(dense_profile_nodes, dense_profile_edges; profile=:auto)
+    @test auto_profiled_dense.config.hide_edges_on_move == true
+    @test auto_profiled_dense.config.label_density == 0.6
+
+    large_profile_nodes = [(id="m$(index)",) for index in 1:1_600]
+    large_profile_edges = [(source="m$(index)", target="m$(index + 1)") for index in 1:1_599]
+    @test recommend_profile(large_profile_nodes, large_profile_edges) == :large
+    auto_profiled_large = graph(large_profile_nodes, large_profile_edges; profile=:auto)
+    @test auto_profiled_large.config.hide_edges_on_move == true
+    @test auto_profiled_large.config.label_density == 0.35
+
+    overridden_profiled_render = render(layout_nodes, edges; profile=:large, label_density=0.9)
+    @test overridden_profiled_render.config.label_density == 0.9
+
+    profiled_graph = graph(layout_nodes, edges; profile=:dense)
+    @test profiled_graph.config.hide_edges_on_move == true
+    @test profiled_graph.config.label_density == 0.6
 
     mapped_graph = graph(
         graph_input;
@@ -211,6 +331,31 @@ using Graphs
         (-0.5, -0.5),
         (0.5, -0.5),
     ])
+
+    vertex_attributes = Dict(
+        1 => (label="Alpha", color="#ef4444", size=2.0, attributes=(group="g1", rank=1)),
+        2 => Dict(:label => "Beta", :size => 1.6, :attributes => Dict("group" => "g1")),
+        3 => (name="Gamma", weight=1.4),
+    )
+    edge_attributes = Dict(
+        (1, 2) => (label="edge-12", color="#94a3b8", size=0.8, attributes=(kind="path",)),
+        "2=>3" => Dict("label" => "edge-23", "size" => 0.7),
+        (4, 3) => (label="edge-34-reversed", color="#64748b"),
+    )
+    bridged_graph = graph(
+        graph_input;
+        node_mapper=vertex_attribute_mapper(vertex_attributes; id_mapper=vertex -> "attr$(vertex)"),
+        edge_mapper=edge_attribute_mapper(edge_attributes; source_mapper=src -> "attr$(src)", target_mapper=dst -> "attr$(dst)"),
+        layout=:grid,
+        columns=2,
+    )
+    @test [node.id for node in bridged_graph.nodes] == ["attr1", "attr2", "attr3", "attr4"]
+    @test bridged_graph.nodes[1].label == "Alpha"
+    @test bridged_graph.nodes[1].attributes["group"] == "g1"
+    @test bridged_graph.nodes[3].label == "Gamma"
+    @test bridged_graph.edges[1].label == "edge-12"
+    @test bridged_graph.edges[1].attributes["kind"] == "path"
+    @test any(edge.label == "edge-34-reversed" for edge in bridged_graph.edges)
 
     staged_graph_input = layout_graph(
         graph_input;
@@ -311,4 +456,12 @@ using Graphs
     exported = read(output, String)
     @test occursin("<!doctype html>", exported)
     @test occursin("large-graphs-jl-root", exported)
+    @test occursin("window.LargeGraphsOffline.render", exported)
+    @test !occursin("cdn.jsdelivr.net", exported)
+
+    output_sigma = joinpath(tempdir, "graph-sigma.html")
+    savehtml(output_sigma, positioned_nodes, [(source="a", target="b", color="#94a3b8")]; self_contained=false, height="480px")
+    exported_sigma = read(output_sigma, String)
+    @test occursin("window.LargeGraphs.render", exported_sigma)
+    @test occursin("cdn.jsdelivr.net", exported_sigma)
 end

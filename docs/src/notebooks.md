@@ -22,7 +22,7 @@ using LargeGraphs
 Any `SigmaGraph` value renders as HTML in the notebook output area:
 
 ```julia
-viz = render(nodes, edges; layout=:force_directed, algorithm=:fruchterman_reingold, iterations=120, seed=7, height="600px", hide_edges_on_move=true)
+viz = render(nodes, edges; layout=:force_directed, algorithm=:fruchterman_reingold, iterations=120, seed=7, profile=:dense, height="600px")
 display(viz)
 ```
 
@@ -85,6 +85,10 @@ neighbors of the selected node in the browser.
 
 ## Demos in This Repository
 
+For a workflow-oriented overview of the repository examples, see `examples/README.md` in the project root.
+
+
+- `examples/demo_staged_pipeline.ipynb` shows the recommended staged workflow.
 - `examples/demo_notebook.ipynb` shows notebook rendering workflows and large-graph viewing.
 - `examples/demo_layout_functions.ipynb` shows direct layout functions returning positioned nodes.
 - `examples/demo_graphsjl.ipynb` shows the `Graphs.jl` input workflow.
@@ -94,6 +98,6 @@ neighbors of the selected node in the browser.
 ## Practical Advice
 
 - Keep labels sparse for large graphs.
-- Use `hide_edges_on_move=true` when panning feels sluggish.
+- Use `profile=:dense` or `profile=:large` when panning feels sluggish or labels become cluttered.
 - Use `:random`, `:circular`, `:grid`, `:spectral`, or `:tree` for cheaper layout options when the graph structure fits; force-directed layouts (`:spring`, `:force_directed`) are more expensive.
 - Save a standalone HTML copy when you need to share results with someone outside Julia.

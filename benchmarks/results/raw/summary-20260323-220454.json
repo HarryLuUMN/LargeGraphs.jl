@@ -1,0 +1,260 @@
+[
+    {
+        "scenario": "smoke_erdos_renyi",
+        "backend": "LargeGraphs",
+        "family": "erdos_renyi",
+        "realized_density": 0.031092436974789917,
+        "nodes": 120,
+        "artifact_bytes": 63219,
+        "total_ms": {
+            "median": 176.096958,
+            "std": 0.2549832714931136,
+            "cv_pct": 0.1447725178493308,
+            "max": 176.395458,
+            "min": 175.888126,
+            "samples": [
+                176.395458,
+                175.888126,
+                176.096958
+            ],
+            "sample_count": 3,
+            "mean": 176.12684733333333,
+            "trimmed_mean": 176.096958
+        },
+        "stages_ms": {
+            "assemble_ms": {
+                "median": 0.026375,
+                "std": 0.0011504729462268977,
+                "cv_pct": 4.408449040988994,
+                "max": 0.027083,
+                "min": 0.024833,
+                "samples": [
+                    0.027083,
+                    0.026375,
+                    0.024833
+                ],
+                "sample_count": 3,
+                "mean": 0.026097,
+                "trimmed_mean": 0.026375
+            },
+            "layout_ms": {
+                "median": 173.599791,
+                "std": 0.2606312239339943,
+                "cv_pct": 0.15010743342614408,
+                "max": 173.904125,
+                "min": 173.385459,
+                "samples": [
+                    173.904125,
+                    173.385459,
+                    173.599791
+                ],
+                "sample_count": 3,
+                "mean": 173.62979166666665,
+                "trimmed_mean": 173.599791
+            },
+            "export_ms": {
+                "median": 2.472334,
+                "std": 0.006137678497065009,
+                "cv_pct": 0.2483926008096591,
+                "max": 2.476292,
+                "min": 2.46425,
+                "samples": [
+                    2.46425,
+                    2.476292,
+                    2.472334
+                ],
+                "sample_count": 3,
+                "mean": 2.4709586666666667,
+                "trimmed_mean": 2.472334
+            }
+        },
+        "configured_density": 0.03,
+        "edges": 222
+    },
+    {
+        "scenario": "smoke_erdos_renyi",
+        "backend": "GraphMakie",
+        "family": "erdos_renyi",
+        "realized_density": 0.031092436974789917,
+        "nodes": 120,
+        "artifact_bytes": 445905,
+        "total_ms": {
+            "median": 59.904542,
+            "std": 0.784340102599847,
+            "cv_pct": 1.3174028074028872,
+            "max": 60.069792,
+            "min": 58.636208999999994,
+            "samples": [
+                59.904542,
+                60.069792,
+                58.636208999999994
+            ],
+            "sample_count": 3,
+            "mean": 59.53684766666667,
+            "trimmed_mean": 59.904542
+        },
+        "stages_ms": {
+            "export_ms": {
+                "median": 43.126667,
+                "std": 0.7262723735605908,
+                "cv_pct": 1.6976516862666884,
+                "max": 43.269875,
+                "min": 41.946459,
+                "samples": [
+                    43.126667,
+                    43.269875,
+                    41.946459
+                ],
+                "sample_count": 3,
+                "mean": 42.78100033333333,
+                "trimmed_mean": 43.126667
+            },
+            "plot_ms": {
+                "median": 16.777875,
+                "std": 0.05829327187878026,
+                "cv_pct": 0.34789808428735336,
+                "max": 16.799917,
+                "min": 16.68975,
+                "samples": [
+                    16.777875,
+                    16.799917,
+                    16.68975
+                ],
+                "sample_count": 3,
+                "mean": 16.755847333333335,
+                "trimmed_mean": 16.777875
+            }
+        },
+        "configured_density": 0.03,
+        "edges": 222
+    },
+    {
+        "scenario": "smoke_preferential_attachment",
+        "backend": "LargeGraphs",
+        "family": "preferential_attachment",
+        "realized_density": 0.05493482309124767,
+        "nodes": 180,
+        "artifact_bytes": 124575,
+        "total_ms": {
+            "median": 415.783167,
+            "std": 1.1218163290157137,
+            "cv_pct": 0.26998337679789103,
+            "max": 416.47525,
+            "min": 414.28091700000004,
+            "samples": [
+                414.28091700000004,
+                416.47525,
+                415.783167
+            ],
+            "sample_count": 3,
+            "mean": 415.51311133333337,
+            "trimmed_mean": 415.783167
+        },
+        "stages_ms": {
+            "assemble_ms": {
+                "median": 0.053125,
+                "std": 0.0015982716706909805,
+                "cv_pct": 2.99440129152851,
+                "max": 0.055084,
+                "min": 0.051917,
+                "samples": [
+                    0.055084,
+                    0.053125,
+                    0.051917
+                ],
+                "sample_count": 3,
+                "mean": 0.05337533333333333,
+                "trimmed_mean": 0.053125
+            },
+            "layout_ms": {
+                "median": 408.681125,
+                "std": 1.1751335983445943,
+                "cv_pct": 0.2877486509516996,
+                "max": 409.390375,
+                "min": 407.09525,
+                "samples": [
+                    407.09525,
+                    409.390375,
+                    408.681125
+                ],
+                "sample_count": 3,
+                "mean": 408.3889166666667,
+                "trimmed_mean": 408.681125
+            },
+            "export_ms": {
+                "median": 7.050125,
+                "std": 0.05256597803078828,
+                "cv_pct": 0.743421314457593,
+                "max": 7.130583,
+                "min": 7.03175,
+                "samples": [
+                    7.130583,
+                    7.03175,
+                    7.050125
+                ],
+                "sample_count": 3,
+                "mean": 7.070819333333334,
+                "trimmed_mean": 7.050125
+            }
+        },
+        "configured_density": 0.03,
+        "edges": 885
+    },
+    {
+        "scenario": "smoke_preferential_attachment",
+        "backend": "GraphMakie",
+        "family": "preferential_attachment",
+        "realized_density": 0.05493482309124767,
+        "nodes": 180,
+        "artifact_bytes": 2736298,
+        "total_ms": {
+            "median": 158.480917,
+            "std": 1.2701043202725533,
+            "cv_pct": 0.8045507125463237,
+            "max": 158.709792,
+            "min": 156.404417,
+            "samples": [
+                158.480917,
+                158.709792,
+                156.404417
+            ],
+            "sample_count": 3,
+            "mean": 157.865042,
+            "trimmed_mean": 158.480917
+        },
+        "stages_ms": {
+            "export_ms": {
+                "median": 115.823584,
+                "std": 1.188572399094393,
+                "cv_pct": 1.0322001014511373,
+                "max": 115.847625,
+                "min": 113.777042,
+                "samples": [
+                    115.823584,
+                    115.847625,
+                    113.777042
+                ],
+                "sample_count": 3,
+                "mean": 115.14941699999999,
+                "trimmed_mean": 115.823584
+            },
+            "plot_ms": {
+                "median": 42.657333,
+                "std": 0.1277900182486871,
+                "cv_pct": 0.2991645756059688,
+                "max": 42.862167,
+                "min": 42.627375,
+                "samples": [
+                    42.657333,
+                    42.862167,
+                    42.627375
+                ],
+                "sample_count": 3,
+                "mean": 42.715624999999996,
+                "trimmed_mean": 42.657333
+            }
+        },
+        "configured_density": 0.03,
+        "edges": 885
+    }
+]

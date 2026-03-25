@@ -45,26 +45,41 @@ If the package is installed in one environment and the notebook kernel points
 at another, `using LargeGraphs` will fail inside the notebook even if it works
 from the terminal.
 
-### Graphs.jl integration
+## Primary workflows
 
-`LargeGraphs` depends on [`Graphs.jl`](https://github.com/JuliaGraphs/Graphs.jl)
-and can render graph objects directly:
+Use the staged pipeline as the default workflow, then choose one-shot rendering
+or direct `Graphs.jl` input when that better matches your notebook.
+
+| Workflow | Best for | Core calls |
+| --- | --- | --- |
+| Staged pipeline (recommended) | Reusing one layout across multiple renders/exports | `layout_graph` -> `assemble_graph` |
+| One-shot convenience | Fast iteration in a single call | `render` |
+| `Graphs.jl` input | Existing `Graphs.jl` projects | `render(g; node_mapper=..., edge_mapper=...)` |
+
+### Staged pipeline (recommended)
 
 ```julia
-using Graphs
 using LargeGraphs
 
-g = path_graph(6)
-
-viz = render(
-    g;
-    layout=:circular,
-    node_mapper=v -> (id="v$v", label="Node $v", size=1.5),
-    edge_mapper=e -> (source="v$(src(e))", target="v$(dst(e))", color="#94a3b8"),
+layouted = layout_graph(
+    nodes,
+    edges;
+    layout=:force_directed,
+    algorithm=:forceatlas2,
+    iterations=60,
+    seed=7,
 )
+
+viz = assemble_graph(
+    layouted;
+    config=SigmaConfig(height="520px", background="#f8fafc"),
+)
+
+display(viz)
+savehtml("graph.html", viz)
 ```
 
-## Quick Start
+### One-shot convenience
 
 ```julia
 using LargeGraphs
@@ -97,6 +112,22 @@ display(viz)
 savehtml("graph.html", viz)
 ```
 
+### Graphs.jl input
+
+```julia
+using Graphs
+using LargeGraphs
+
+g = path_graph(6)
+
+viz = render(
+    g;
+    layout=:circular,
+    node_mapper=v -> (id="v$v", label="Node $v", size=1.5),
+    edge_mapper=e -> (source="v$(src(e))", target="v$(dst(e))", color="#94a3b8"),
+)
+```
+
 ## Notebook Usage
 
 `SigmaGraph` implements HTML display, so a notebook cell only needs to evaluate
@@ -104,10 +135,13 @@ or `display` the value returned by `render(...)` or `graph(...)`.
 
 The repository includes:
 
+- `examples/demo_staged_pipeline.ipynb` for the recommended staged workflow.
 - `examples/demo_notebook.ipynb` for an IJulia notebook workflow.
 - `examples/demo_layout_functions.ipynb` for direct layout function demos.
+- `examples/demo_graphsjl.ipynb` for direct `Graphs.jl` rendering.
 - `examples/demo_interactions.ipynb` for click/hover interaction and Julia-side state updates.
 - `examples/demo_large_graph.jl` for script-based standalone export.
+- `examples/README.md` for a workflow-oriented example index.
 
 Typical notebook setup:
 
@@ -140,7 +174,7 @@ julia --project=benchmarks benchmarks/scripts/run_smoke.jl
 
 - `NodeSpec(id; x, y, size, label, color, attributes)`
 - `EdgeSpec(source, target; id, size, label, color, attributes)`
-- `SigmaConfig(; width, height, background, camera_ratio, render_edge_labels, hide_edges_on_move, label_density, label_grid_cell_size, max_node_size, min_node_size)`
+- `SigmaConfig(; profile, width, height, background, camera_ratio, render_edge_labels, hide_edges_on_move, label_density, label_grid_cell_size, max_node_size, min_node_size)`
 
 ### Main functions
 
@@ -161,6 +195,15 @@ julia --project=benchmarks benchmarks/scripts/run_smoke.jl
 - `tree_layout(nodes, edges; algorithm=:layered, kwargs...)` runs tree-oriented layouts with `:layered` and `:radial`.
 - `force_directed_layout(nodes, edges; algorithm=:fruchterman_reingold, kwargs...)` runs a force-directed family with `:fruchterman_reingold`, `:kamada_kawai`, or `:forceatlas2`.
 - `spring_layout(nodes, edges; iterations, seed, extent, gravity, cooling)` remains as a compatibility alias for Fruchterman-Reingold.
+
+## Choose a layout
+
+See `docs/src/layout-guide.md` for the full guide. Short version:
+
+- `:random` for very large graphs and quick previews
+- `:spectral` for denser graphs when you want cheap structure-aware placement
+- `:tree` for rooted or hierarchical data
+- `:force_directed` for smaller graphs when visual structure matters more than speed
 
 ### Layout usage
 
@@ -205,6 +248,23 @@ With `layout=:force_directed`, select the specific algorithm via `algorithm=`:
 - `:fruchterman_reingold`
 - `:kamada_kawai`
 - `:forceatlas2`
+
+## Rendering Profiles
+
+The rendering pipeline accepts `profile=` in `SigmaConfig(...)`, `graph(...)`, `render(...)`, and `assemble_graph(...)`.
+
+Available profiles:
+
+- `:default` — current baseline viewer settings
+- `:dense` — lower label density and hide edges while moving for denser graphs
+- `:large` — more aggressive label reduction and smaller node sizing for larger graphs
+- `:presentation` — stronger labels and larger node sizing for demos or screenshots
+
+Explicit keyword arguments still override the profile defaults. For example:
+
+```julia
+viz = render(nodes, edges; profile=:large, label_density=0.8)
+```
 
 ### Accepted input forms
 
@@ -369,6 +429,11 @@ Source pages:
 - `src/LargeGraphs.jl`: package source and public API.
 - `assets/sigma-viewer.js`: browser bootstrap for Sigma.js rendering.
 - `examples/demo_notebook.ipynb`: notebook demo.
+- `examples/demo_large_graph.jl`: script demo with standalone export.
+- `test/runtests.jl`: package tests.
+_large_graph.jl`: script demo with standalone export.
+- `test/runtests.jl`: package tests.
+tebook.ipynb`: notebook demo.
 - `examples/demo_large_graph.jl`: script demo with standalone export.
 - `test/runtests.jl`: package tests.
 _large_graph.jl`: script demo with standalone export.

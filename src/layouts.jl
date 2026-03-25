@@ -73,6 +73,33 @@ function tree_layout(nodes, edges; algorithm=:layered, kwargs...)
 end
 
 """
+    hierarchy_layout(nodes; parent_key=:parent, id_key=:id, algorithm=:layered, kwargs...)
+    hierarchy_layout(nodes, edges; parent_key=:parent, id_key=:id, algorithm=:layered, kwargs...)
+
+Compute a hierarchy layout from node-level parent references.
+"""
+function hierarchy_layout(nodes; parent_key=:parent, id_key=:id, algorithm=:layered, kwargs...)
+    input_nodes = collect(nodes)
+    normalized_nodes = _normalize_nodes(input_nodes)
+    fallback_ids = [node.id for node in normalized_nodes]
+    resolved_ids = [_hierarchy_node_id(input_nodes[index], id_key, fallback_ids[index]) for index in eachindex(input_nodes)]
+    known_ids = Set(resolved_ids)
+    hierarchy_edges = EdgeSpec[]
+    for (index, item) in pairs(input_nodes)
+        parent = _hierarchy_node_parent(item, parent_key)
+        isnothing(parent) && continue
+        parent_id = string(parent)
+        parent_id in known_ids || continue
+        push!(hierarchy_edges, EdgeSpec(parent_id, resolved_ids[index]))
+    end
+    _tree_layout(normalized_nodes, hierarchy_edges; algorithm=algorithm, kwargs...)
+end
+
+function hierarchy_layout(nodes, edges; kwargs...)
+    hierarchy_layout(nodes; kwargs...)
+end
+
+"""
     force_directed_layout(nodes, edges; algorithm=:fruchterman_reingold, kwargs...)
 
 Compute a lightweight force-directed layout from the graph structure.
@@ -108,6 +135,7 @@ function _resolve_layout(layout::Symbol)
     layout === :orthogonal && return orthogonal_layout
     layout === :spectral && return spectral_layout
     layout === :tree && return tree_layout
+    layout === :hierarchy && return hierarchy_layout
     layout === :spring && return spring_layout
     layout === :force_directed && return force_directed_layout
     error("Unsupported layout symbol: $(layout)")
@@ -300,6 +328,8 @@ function _layered_tree_layout(
     nodes::Vector{NodeSpec},
     edges::Vector{EdgeSpec};
     root=nothing,
+    orientation=:top_down,
+    sort_children=:id,
     level_gap=1.0,
     sibling_gap=1.0,
     extent=1.0,
@@ -308,7 +338,7 @@ function _layered_tree_layout(
     count == 0 && return NodeSpec[]
     count == 1 && return [_with_position(only(nodes), 0.0, 0.0)]
 
-    structure = _tree_structure(nodes, edges; root=root)
+    structure = _tree_structure(nodes, edges; root=root, sort_children=sort_children)
     xs = zeros(Float64, count)
     ys = zeros(Float64, count)
     next_leaf_x = Ref(0.0)
@@ -319,7 +349,8 @@ function _layered_tree_layout(
     end
 
     scaled_xs, scaled_ys = _rescale_positions(xs, ys; extent=extent)
-    [_with_position(node, scaled_xs[index], scaled_ys[index]) for (index, node) in pairs(nodes)]
+    oriented_xs, oriented_ys = _apply_tree_orientation(scaled_xs, scaled_ys, orientation)
+    [_with_position(node, oriented_xs[index], oriented_ys[index]) for (index, node) in pairs(nodes)]
 end
 
 function _assign_layered_tree_positions!(xs, ys, children, depths, node_index, next_leaf_x; level_gap=1.0, sibling_gap=1.0)
@@ -341,6 +372,8 @@ function _radial_tree_layout(
     nodes::Vector{NodeSpec},
     edges::Vector{EdgeSpec};
     root=nothing,
+    orientation=:top_down,
+    sort_children=:id,
     level_gap=1.0,
     sibling_gap=1.0,
     extent=1.0,
@@ -349,7 +382,7 @@ function _radial_tree_layout(
     count == 0 && return NodeSpec[]
     count == 1 && return [_with_position(only(nodes), 0.0, 0.0)]
 
-    structure = _tree_structure(nodes, edges; root=root)
+    structure = _tree_structure(nodes, edges; root=root, sort_children=sort_children)
     linear_xs = zeros(Float64, count)
     next_leaf_x = Ref(0.0)
     for root_index in structure.root_indices
@@ -374,7 +407,8 @@ function _radial_tree_layout(
     end
 
     scaled_xs, scaled_ys = _rescale_positions(xs, ys; extent=extent)
-    [_with_position(node, scaled_xs[index], scaled_ys[index]) for (index, node) in pairs(nodes)]
+    oriented_xs, oriented_ys = _apply_tree_orientation(scaled_xs, scaled_ys, orientation)
+    [_with_position(node, oriented_xs[index], oriented_ys[index]) for (index, node) in pairs(nodes)]
 end
 
 function _assign_radial_tree_order!(linear_xs, children, node_index, next_leaf_x; sibling_gap=1.0)
@@ -391,7 +425,7 @@ function _assign_radial_tree_order!(linear_xs, children, node_index, next_leaf_x
     nothing
 end
 
-function _tree_structure(nodes::Vector{NodeSpec}, edges::Vector{EdgeSpec}; root=nothing)
+function _tree_structure(nodes::Vector{NodeSpec}, edges::Vector{EdgeSpec}; root=nothing, sort_children=:id)
     count = length(nodes)
     node_index = Dict(node.id => index for (index, node) in pairs(nodes))
     undirected = [Int[] for _ in 1:count]
@@ -455,10 +489,76 @@ function _tree_structure(nodes::Vector{NodeSpec}, edges::Vector{EdgeSpec}; root=
         push!(oriented_children[parent[index]], index)
     end
     for child_list in oriented_children
-        sort!(child_list)
+        _sort_tree_children!(child_list, nodes, undirected, sort_children)
     end
 
     (root_indices=ordered_roots, children=oriented_children, depths=depths)
+end
+
+function _sort_tree_children!(child_list, nodes, undirected, sort_children)
+    sort_children === :input && return child_list
+    if sort_children === :id
+        sort!(child_list; by=index -> nodes[index].id)
+        return child_list
+    end
+    if sort_children === :degree
+        sort!(child_list; by=index -> (-length(undirected[index]), nodes[index].id))
+        return child_list
+    end
+    if sort_children isa Function
+        sort!(child_list; by=index -> sort_children(nodes[index]))
+        return child_list
+    end
+    error("Unsupported sort_children option: $(sort_children)")
+end
+
+function _apply_tree_orientation(xs::Vector{Float64}, ys::Vector{Float64}, orientation)
+    normalized = _normalize_tree_orientation(orientation)
+    normalized === :top_down && return xs, ys
+    normalized === :bottom_up && return xs, [-value for value in ys]
+    normalized === :left_right && return [-ys[index] for index in eachindex(ys)], copy(xs)
+    normalized === :right_left && return [ys[index] for index in eachindex(ys)], copy(xs)
+    error("Unsupported tree orientation: $(orientation)")
+end
+
+function _normalize_tree_orientation(orientation::Symbol)
+    aliases = Dict(
+        :top_down => :top_down,
+        :topdown => :top_down,
+        :down => :top_down,
+        :bottom_up => :bottom_up,
+        :bottomup => :bottom_up,
+        :up => :bottom_up,
+        :left_right => :left_right,
+        :leftright => :left_right,
+        :right_left => :right_left,
+        :rightleft => :right_left,
+    )
+    haskey(aliases, orientation) && return aliases[orientation]
+    error("Unsupported tree orientation: $(orientation)")
+end
+
+_normalize_tree_orientation(orientation::AbstractString) = _normalize_tree_orientation(Symbol(lowercase(strip(orientation))))
+
+function _hierarchy_node_parent(item, parent_key)
+    key_symbol = Symbol(parent_key)
+    item isa NamedTuple && return haskey(item, key_symbol) ? getfield(item, key_symbol) : nothing
+    if item isa AbstractDict
+        haskey(item, parent_key) && return item[parent_key]
+        haskey(item, key_symbol) && return item[key_symbol]
+        return nothing
+    end
+    nothing
+end
+
+function _hierarchy_node_id(item, id_key, fallback)
+    key_symbol = Symbol(id_key)
+    item isa NamedTuple && return haskey(item, key_symbol) ? string(getfield(item, key_symbol)) : string(fallback)
+    if item isa AbstractDict
+        haskey(item, id_key) && return string(item[id_key])
+        haskey(item, key_symbol) && return string(item[key_symbol])
+    end
+    string(fallback)
 end
 
 function _tree_root_index(root, node_index)

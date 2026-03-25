@@ -2,14 +2,14 @@
 
 Generated from:
 - `raw/latest.json`
-- `raw/summary-20260322-153844.json`
+- `raw/summary-20260324-083632.json`
 
 ## Overview
 
 | Scenario | Nodes | Edges | Faster backend | Total speedup | Smaller artifact | Size ratio | Largest stage share |
 | --- | ---: | ---: | --- | ---: | --- | ---: | --- |
-| `smoke_erdos_renyi` | 120 | 222 | GraphMakie | 2.61x | LargeGraphs | 7.05x | export_ms (79.1%) |
-| `smoke_preferential_attachment` | 180 | 885 | GraphMakie | 2.5x | LargeGraphs | 21.97x | export_ms (79.8%) |
+| `smoke_erdos_renyi` | `erdos_renyi` | 120 | 222 | 0.0311 | GraphMakie | 2.82x | LargeGraphs | 7.05x | export_ms (71.9%) |
+| `smoke_preferential_attachment` | `preferential_attachment` | 180 | 885 | 0.0549 | GraphMakie | 2.55x | LargeGraphs | 21.97x | export_ms (73.1%) |
 
 ## Scenario Details
 
@@ -17,49 +17,49 @@ Generated from:
 
 | Backend | Total trimmed mean (ms) | Total mean (ms) | CV (%) | Artifact | Stage breakdown |
 | --- | ---: | ---: | ---: | ---: | --- |
-| GraphMakie | 55.05 | 55.36 | 1.7 | 435.5 KiB | `export_ms` 43.54 ms (79.1%), `plot_ms` 11.8 ms (21.4%) |
-| LargeGraphs | 143.81 | 148.13 | 5.8 | 61.7 KiB | `assemble_ms` 0.03 ms (0.0%), `export_ms` 2.1 ms (1.5%), `layout_ms` 141.75 ms (98.6%) |
+| GraphMakie | 60.23 | 60.23 | 0.2 | 435.5 KiB | `export_ms` 43.32 ms (71.9%), `plot_ms` 16.87 ms (28.0%) |
+| LargeGraphs | 169.61 | 170.59 | 1.3 | 61.7 KiB | `assemble_ms` 0.03 ms (0.0%), `export_ms` 3.63 ms (2.1%), `layout_ms` 166.51 ms (98.2%) |
 
 #### GraphMakie stage details
 
 | Stage | Trimmed mean (ms) | Mean (ms) | Share of total | CV (%) |
 | --- | ---: | ---: | ---: | ---: |
-| `export_ms` | 43.54 | 43.65 | 79.1% | 2.1 |
-| `plot_ms` | 11.8 | 11.7 | 21.4% | 1.5 |
+| `export_ms` | 43.32 | 43.36 | 71.9% | 0.2 |
+| `plot_ms` | 16.87 | 16.86 | 28.0% | 0.3 |
 
 #### LargeGraphs stage details
 
 | Stage | Trimmed mean (ms) | Mean (ms) | Share of total | CV (%) |
 | --- | ---: | ---: | ---: | ---: |
-| `assemble_ms` | 0.03 | 0.03 | 0.0% | 13.6 |
-| `export_ms` | 2.1 | 2.59 | 1.5% | 34.9 |
-| `layout_ms` | 141.75 | 145.51 | 98.6% | 5.2 |
+| `assemble_ms` | 0.03 | 0.03 | 0.0% | 5.9 |
+| `export_ms` | 3.63 | 3.38 | 2.1% | 24.9 |
+| `layout_ms` | 166.51 | 167.19 | 98.2% | 1.0 |
 
-`GraphMakie` was faster overall by 2.61x. Its largest timed stage was `export_ms` at 79.1% of total trimmed mean, while `LargeGraphs` produced the smaller artifact by 7.05x.
+`GraphMakie` was faster overall by 2.82x. Its largest timed stage was `export_ms` at 71.9% of total trimmed mean, while `LargeGraphs` produced the smaller artifact by 7.05x.
 
 ### smoke_preferential_attachment
 
 | Backend | Total trimmed mean (ms) | Total mean (ms) | CV (%) | Artifact | Stage breakdown |
 | --- | ---: | ---: | ---: | ---: | --- |
-| GraphMakie | 137.35 | 136.91 | 1.2 | 2.61 MiB | `export_ms` 109.67 ms (79.8%), `plot_ms` 27.68 ms (20.2%) |
-| LargeGraphs | 343.92 | 342.63 | 1.4 | 121.7 KiB | `assemble_ms` 0.05 ms (0.0%), `export_ms` 5.49 ms (1.6%), `layout_ms` 336.99 ms (98.0%) |
+| GraphMakie | 159.25 | 159.18 | 0.1 | 2.61 MiB | `export_ms` 116.36 ms (73.1%), `plot_ms` 42.77 ms (26.9%) |
+| LargeGraphs | 405.72 | 405.18 | 0.3 | 121.7 KiB | `assemble_ms` 0.06 ms (0.0%), `export_ms` 7.04 ms (1.7%), `layout_ms` 397.89 ms (98.1%) |
 
 #### GraphMakie stage details
 
 | Stage | Trimmed mean (ms) | Mean (ms) | Share of total | CV (%) |
 | --- | ---: | ---: | ---: | ---: |
-| `export_ms` | 109.67 | 109.18 | 79.8% | 1.2 |
-| `plot_ms` | 27.68 | 27.73 | 20.2% | 1.2 |
+| `export_ms` | 116.36 | 116.37 | 73.1% | 0.2 |
+| `plot_ms` | 42.77 | 42.8 | 26.9% | 0.2 |
 
 #### LargeGraphs stage details
 
 | Stage | Trimmed mean (ms) | Mean (ms) | Share of total | CV (%) |
 | --- | ---: | ---: | ---: | ---: |
-| `assemble_ms` | 0.05 | 0.05 | 0.0% | 6.4 |
-| `export_ms` | 5.49 | 5.94 | 1.6% | 13.6 |
-| `layout_ms` | 336.99 | 336.63 | 98.0% | 1.4 |
+| `assemble_ms` | 0.06 | 0.06 | 0.0% | 2.0 |
+| `export_ms` | 7.04 | 7.27 | 1.7% | 6.0 |
+| `layout_ms` | 397.89 | 397.85 | 98.1% | 0.3 |
 
-`GraphMakie` was faster overall by 2.5x. Its largest timed stage was `export_ms` at 79.8% of total trimmed mean, while `LargeGraphs` produced the smaller artifact by 21.97x.
+`GraphMakie` was faster overall by 2.55x. Its largest timed stage was `export_ms` at 73.1% of total trimmed mean, while `LargeGraphs` produced the smaller artifact by 21.97x.
 
 ## Notes
 
