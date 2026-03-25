@@ -15,6 +15,37 @@ outside Julia.
 - Keeps the package surface small enough to understand quickly.
 - Supports standalone HTML export for demos and reports.
 
+## Alpha status
+
+`LargeGraphs` is currently best treated as an alpha-stage package for notebook-first graph visualization.
+
+It is a good fit when you want:
+
+- quick interactive graph views in IJulia or Jupyter
+- direct rendering from plain Julia collections or `Graphs.jl`
+- lightweight standalone HTML export for demos, reports, or sharing
+- a small API surface that is easy to understand and adapt
+
+It is not yet the right fit when you need:
+
+- a long-term stable public API guarantee
+- exhaustive layout controls comparable to dedicated graph drawing systems
+- large-scale benchmark coverage across many datasets and machines
+- polished production UX around packaging, hosting, and lifecycle management of exported assets
+
+Current alpha focus:
+
+- make the staged pipeline the clearest default workflow
+- keep the fast `:sfdp` path stable and well-documented
+- validate the core notebook flows with a small set of representative examples
+- collect feedback from early users before widening the API surface further
+
+If you are trying the package for the first time, start with:
+
+1. `examples/demo_staged_pipeline.ipynb`
+2. `examples/demo_notebook.ipynb`
+3. `examples/demo_networklayout_layouts.ipynb`
+
 ## Installation
 
 ### Add from a local checkout
