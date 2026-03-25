@@ -202,6 +202,18 @@ Run a quick smoke benchmark from the repository root:
 julia --project=benchmarks benchmarks/scripts/run_smoke.jl
 ```
 
+Why this matters for early users:
+
+- the current fast path is not just smaller on artifact size, it is also competitive on end-to-end smoke benchmarks
+- the staged pipeline makes it easy to see where time is spent and to swap layout strategies without rewriting the rest of your workflow
+- when you use `algorithm=:sfdp`, the package now has a clear default that is both practical and easy to explain
+
+Current benchmark takeaway:
+
+- in the latest smoke benchmark, `LargeGraphs` is faster than `GraphMakie` on the checked scenarios when using the `:sfdp` path
+- exported artifacts are also much smaller, which is useful for notebook sharing and standalone HTML demos
+- the benchmark suite is still intentionally small, so treat the current result as an encouraging signal rather than a final universal ranking
+
 ## NetworkLayout Integration
 
 `LargeGraphs` now supports faster force-directed layouts backed by

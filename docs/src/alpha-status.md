@@ -47,3 +47,19 @@ If you are evaluating the package today, expect:
 - good results on the documented example paths
 - some rough edges outside the main workflows
 - continued refinement of performance, especially around layout choices and benchmark coverage
+
+## Why Try It Now
+
+For early users, the package already offers a concrete combination that is easy
+to evaluate:
+
+- a notebook-first workflow that stays small and understandable
+- a staged pipeline that separates layout, assembly, and export cleanly
+- a fast default force-directed path through `algorithm=:sfdp`
+- standalone HTML output that is lightweight enough to share quickly
+
+The current benchmark story is strong enough to justify initial trials: the
+latest smoke benchmark favors `LargeGraphs` on both total runtime and artifact
+size for the checked scenarios. That does not replace a full benchmark suite,
+but it is a good reason to start collecting early-user feedback now instead of
+waiting for perfect coverage.
