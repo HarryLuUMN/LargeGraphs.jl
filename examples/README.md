@@ -2,7 +2,9 @@
 
 This directory is organized by workflow rather than by feature list.
 
-## Recommended reading order
+## Core examples
+
+Start with these four unless you already know exactly what you need.
 
 ### 1. `demo_staged_pipeline.ipynb`
 Use this first.
@@ -13,7 +15,7 @@ It demonstrates the recommended staged workflow:
 - `render(...)`
 - `savehtml(...)`
 
-This is the best entry point when you want to understand how `LargeGraphs` is structured internally and how to separate layout from rendering/export.
+This is the best entry point when you want to understand the package structure and the recommended default workflow.
 
 ### 2. `demo_notebook.ipynb`
 Use this for the general notebook rendering workflow.
@@ -23,20 +25,7 @@ It shows:
 - multiple layout styles
 - large-graph viewing patterns
 
-If you want the fastest natural-looking default first, pair this with:
-- `demo_networklayout_layouts.ipynb`
-
-### 3. `demo_graphsjl.ipynb`
-Use this when your upstream data already lives in `Graphs.jl`.
-
-It shows how to render `Graphs.AbstractGraph` values directly with `node_mapper` and `edge_mapper`.
-
-### 4. `demo_layout_functions.ipynb`
-Use this when you want to inspect direct layout functions and compare their outputs.
-
-This is the right example when layout choice itself is the main question.
-
-### 5. `demo_networklayout_layouts.ipynb`
+### 3. `demo_networklayout_layouts.ipynb`
 Use this when you want the current recommended fast force-directed path.
 
 It focuses on:
@@ -44,7 +33,17 @@ It focuses on:
 - `algorithm=:sfdp`
 - the `NetworkLayout.jl`-backed options that currently provide the best default speed
 
-### 6. `demo_interactions.ipynb`
+### 4. `demo_graphsjl.ipynb`
+Use this when your upstream data already lives in `Graphs.jl`.
+
+It shows how to render `Graphs.AbstractGraph` values directly with `node_mapper` and `edge_mapper`.
+
+## Additional examples
+
+### `demo_layout_functions.ipynb`
+Use this when layout comparison itself is the main question.
+
+### `demo_interactions.ipynb`
 Use this when you want Julia-side interaction state in IJulia.
 
 It focuses on:
@@ -52,7 +51,7 @@ It focuses on:
 - selected neighbors
 - interaction event capture
 
-### 7. `demo_large_graph.jl`
+### `demo_large_graph.jl`
 Use this for script-driven standalone export outside a notebook.
 
 It writes HTML directly to disk and is a good reference for batch or report workflows.
@@ -62,6 +61,7 @@ It writes HTML directly to disk and is a good reference for batch or report work
 ### I want the default way to use the package
 Start with:
 - `demo_staged_pipeline.ipynb`
+- then `demo_networklayout_layouts.ipynb`
 
 ### I want the shortest path to seeing a graph in a notebook
 Start with:

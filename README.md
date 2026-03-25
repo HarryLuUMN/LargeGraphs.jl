@@ -167,10 +167,10 @@ or `display` the value returned by `render(...)` or `graph(...)`.
 The repository includes:
 
 - `examples/demo_staged_pipeline.ipynb` for the recommended staged workflow.
-- `examples/demo_notebook.ipynb` for an IJulia notebook workflow.
-- `examples/demo_layout_functions.ipynb` for direct layout function demos.
-- `examples/demo_networklayout_layouts.ipynb` for the `NetworkLayout.jl`-backed fast layout options.
+- `examples/demo_notebook.ipynb` for the general notebook path.
+- `examples/demo_networklayout_layouts.ipynb` for the current fast default layout path.
 - `examples/demo_graphsjl.ipynb` for direct `Graphs.jl` rendering.
+- `examples/demo_layout_functions.ipynb` for direct layout function comparison.
 - `examples/demo_interactions.ipynb` for click/hover interaction and Julia-side state updates.
 - `examples/demo_large_graph.jl` for script-based standalone export.
 - `examples/README.md` for a workflow-oriented example index.
