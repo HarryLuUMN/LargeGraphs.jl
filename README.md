@@ -40,6 +40,8 @@ Current alpha focus:
 - validate the core notebook flows with a small set of representative examples
 - collect feedback from early users before widening the API surface further
 
+The latest notebook smoke-check status is summarized in `docs/src/validation.md`.
+
 If you are trying the package for the first time, start with:
 
 1. `examples/demo_staged_pipeline.ipynb`

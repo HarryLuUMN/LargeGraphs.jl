@@ -35,6 +35,7 @@ layout engine.
 
 - Use [Pipeline guide](pipeline.md) for workflow selection and staged-first usage.
 - Use [Alpha Status](alpha-status.md) for current scope, fit, and known limits.
+- Use [Validation](validation.md) for the current black-box notebook smoke-check status.
 - Use [Choose a layout](layout-guide.md) when deciding between random, spectral, tree, and force-directed rendering paths.
 - Use [API reference](api.md) for constructor and function details.
 - Use [Notebook guide](notebooks.md) for IJulia and Jupyter workflows.

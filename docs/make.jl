@@ -8,6 +8,7 @@ makedocs(
     pages = [
         "Home" => "index.md",
         "Alpha Status" => "alpha-status.md",
+        "Validation" => "validation.md",
         "Pipeline Guide" => "pipeline.md",
         "Choose a Layout" => "layout-guide.md",
         "API Reference" => "api.md",
