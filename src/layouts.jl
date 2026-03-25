@@ -627,6 +627,8 @@ function _fruchterman_reingold_layout(nodes::Vector{NodeSpec}, edges::Vector{Edg
     indexed_edges = _edge_indices(nodes, edges)
     area = max(extent^2, 1.0)
     optimal_distance = sqrt(area / count)
+    optimal_distance_sq = optimal_distance^2
+    inv_optimal_distance = 1.0 / optimal_distance
     temperature = max(extent, 1.0)
     disp_x = zeros(Float64, count)
     disp_y = zeros(Float64, count)
@@ -639,10 +641,10 @@ function _fruchterman_reingold_layout(nodes::Vector{NodeSpec}, edges::Vector{Edg
             for j in (i + 1):count
                 dx = xs[i] - xs[j]
                 dy = ys[i] - ys[j]
-                distance = max(sqrt(dx * dx + dy * dy), 1.0e-9)
-                force = optimal_distance^2 / distance
-                fx = dx / distance * force
-                fy = dy / distance * force
+                distance_sq = max(dx * dx + dy * dy, 1.0e-18)
+                scale = optimal_distance_sq / distance_sq
+                fx = dx * scale
+                fy = dy * scale
                 disp_x[i] += fx
                 disp_y[i] += fy
                 disp_x[j] -= fx
@@ -654,9 +656,9 @@ function _fruchterman_reingold_layout(nodes::Vector{NodeSpec}, edges::Vector{Edg
             dx = xs[source] - xs[target]
             dy = ys[source] - ys[target]
             distance = max(sqrt(dx * dx + dy * dy), 1.0e-9)
-            force = distance^2 / optimal_distance
-            fx = dx / distance * force
-            fy = dy / distance * force
+            scale = distance * inv_optimal_distance
+            fx = dx * scale
+            fy = dy * scale
             disp_x[source] -= fx
             disp_y[source] -= fy
             disp_x[target] += fx
@@ -791,10 +793,10 @@ function _forceatlas2_layout(
             for j in (i + 1):count
                 dx = xs[i] - xs[j]
                 dy = ys[i] - ys[j]
-                distance = max(sqrt(dx * dx + dy * dy), 1.0e-9)
-                force = scaling * (degree[i] + 1.0) * (degree[j] + 1.0) / distance
-                fx = dx / distance * force
-                fy = dy / distance * force
+                distance_sq = max(dx * dx + dy * dy, 1.0e-18)
+                scale = scaling * (degree[i] + 1.0) * (degree[j] + 1.0) / distance_sq
+                fx = dx * scale
+                fy = dy * scale
                 force_x[i] += fx
                 force_y[i] += fy
                 force_x[j] -= fx
