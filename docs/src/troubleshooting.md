@@ -25,7 +25,8 @@ Try one of the built-in layouts first:
 - `layout=:grid` for regular overviews
 - `layout=:tree` for rooted trees and forests
 - `layout=:spring` for Fruchterman-Reingold structure-aware layouts
-- `layout=:force_directed` with `algorithm=:kamada_kawai` or `:forceatlas2` for alternative structure-aware layouts
+- `layout=:force_directed` with `algorithm=:sfdp` as the first fast structure-aware option
+- `layout=:force_directed` with `algorithm=:kamada_kawai` or `:forceatlas2` for alternative legacy structure-aware layouts
 
 If the result is still poor, provide explicit coordinates or a custom layout
 callable before rendering.

@@ -22,7 +22,7 @@ using LargeGraphs
 Any `SigmaGraph` value renders as HTML in the notebook output area:
 
 ```julia
-viz = render(nodes, edges; layout=:force_directed, algorithm=:fruchterman_reingold, iterations=120, seed=7, profile=:dense, height="600px")
+viz = render(nodes, edges; layout=:force_directed, algorithm=:sfdp, iterations=80, seed=7, profile=:dense, height="600px")
 display(viz)
 ```
 
@@ -99,5 +99,5 @@ For a workflow-oriented overview of the repository examples, see `examples/READM
 
 - Keep labels sparse for large graphs.
 - Use `profile=:dense` or `profile=:large` when panning feels sluggish or labels become cluttered.
-- Use `:random`, `:circular`, `:grid`, `:spectral`, or `:tree` for cheaper layout options when the graph structure fits; force-directed layouts (`:spring`, `:force_directed`) are more expensive.
+- Use `:random`, `:circular`, `:grid`, `:spectral`, or `:tree` for cheaper layout options when the graph structure fits; for a natural-looking default, prefer `layout=:force_directed, algorithm=:sfdp`.
 - Save a standalone HTML copy when you need to share results with someone outside Julia.

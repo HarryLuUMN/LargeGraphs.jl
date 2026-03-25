@@ -12,7 +12,7 @@ This guide helps you choose a layout based on graph size, structure, and the tra
 | `:orthogonal` | yes | sparse graphs, component overviews, rectilinear drawing | small to medium | low | breadth-first style layout with alternating horizontal and vertical levels |
 | `:spectral` | yes | medium graphs where you want a cheap structure-aware layout | medium | low to medium | lightweight alternative to force simulation; good default for denser graphs |
 | `:tree` | yes | rooted trees, hierarchies, DAG-like structures | small to medium | low | use `algorithm=:layered` or `:radial` |
-| `:force_directed` | yes | natural-looking layouts for exploratory analysis | small to medium | high | supports `:fruchterman_reingold`, `:kamada_kawai`, `:forceatlas2` |
+| `:force_directed` | yes | natural-looking layouts for exploratory analysis | small to medium | medium with `:sfdp`, high with legacy solvers | supports `:sfdp`, `:network_spring`, `:fruchterman_reingold`, `:kamada_kawai`, `:forceatlas2` |
 | `:spring` | yes | compatibility alias for force-directed layout | small to medium | high | maps to Fruchterman-Reingold |
 
 ## Practical recommendations
@@ -45,6 +45,7 @@ Start with:
 - `:circular`
 - `:tree`
 - `:force_directed`
+- Recommended default: `layout=:force_directed, algorithm=:sfdp`
 - `profile=:presentation`
 
 Then adjust labels and node sizing for readability.
@@ -68,7 +69,7 @@ render(nodes, edges; layout=:tree, algorithm=:layered)
 
 ### Natural exploratory layout
 ```julia
-render(nodes, edges; layout=:force_directed, algorithm=:forceatlas2, iterations=80)
+render(nodes, edges; layout=:force_directed, algorithm=:sfdp, iterations=80)
 ```
 
 ## Staged workflow advice

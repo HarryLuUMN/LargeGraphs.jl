@@ -99,8 +99,8 @@ viz = render(
     nodes,
     edges;
     layout=:force_directed,
-    algorithm=:fruchterman_reingold,
-    iterations=120,
+    algorithm=:sfdp,
+    iterations=80,
     seed=7,
     height="520px",
     background="#f8fafc",
@@ -194,6 +194,7 @@ Current status:
 - `:network_spring` and `:sfdp` are available through `force_directed_layout`
 - they are intended as faster alternatives to the package's built-in iterative layouts
 - the integration is alpha-stage and may still need tuning for layout aesthetics on larger graphs
+- `:sfdp` is the recommended default when you want the best speed-quality tradeoff
 
 ## API Overview
 
@@ -220,7 +221,7 @@ Current status:
 - `orthogonal_layout(nodes, edges; extent, layer_spacing, component_spacing)` places nodes on a grid with alternating orthogonal levels.
 - `spectral_layout(nodes, edges; extent, seed)` computes a spectral embedding from the graph Laplacian.
 - `tree_layout(nodes, edges; algorithm=:layered, kwargs...)` runs tree-oriented layouts with `:layered` and `:radial`.
-- `force_directed_layout(nodes, edges; algorithm=:fruchterman_reingold, kwargs...)` runs a force-directed family with `:fruchterman_reingold`, `:kamada_kawai`, or `:forceatlas2`.
+- `force_directed_layout(nodes, edges; algorithm=:fruchterman_reingold, kwargs...)` runs a force-directed family with `:fruchterman_reingold`, `:kamada_kawai`, `:forceatlas2`, `:network_spring`, or `:sfdp`.
 - `spring_layout(nodes, edges; iterations, seed, extent, gravity, cooling)` remains as a compatibility alias for Fruchterman-Reingold.
 
 ## Choose a layout
@@ -230,7 +231,7 @@ See `docs/src/layout-guide.md` for the full guide. Short version:
 - `:random` for very large graphs and quick previews
 - `:spectral` for denser graphs when you want cheap structure-aware placement
 - `:tree` for rooted or hierarchical data
-- `:force_directed` for smaller graphs when visual structure matters more than speed
+- `:force_directed` with `algorithm=:sfdp` as the recommended default for natural-looking layouts
 
 ### Layout usage
 
@@ -244,7 +245,7 @@ viz = render(positioned_nodes, edges; height="520px")
 Or you can let `render` apply the layout for you:
 
 ```julia
-viz = render(nodes, edges; layout=:force_directed, algorithm=:kamada_kawai, iterations=120, seed=3)
+viz = render(nodes, edges; layout=:force_directed, algorithm=:sfdp, iterations=80, seed=3)
 ```
 
 Tree-shaped data can use a tree-specific layout:
@@ -256,7 +257,7 @@ viz = render(nodes, edges; layout=:tree, algorithm=:layered, root="a", extent=2.
 When you want to split layout from rendering, use the staged pipeline directly:
 
 ```julia
-layouted = layout_graph(nodes, edges; layout=:force_directed, algorithm=:forceatlas2, iterations=60, seed=7)
+layouted = layout_graph(nodes, edges; layout=:force_directed, algorithm=:sfdp, iterations=80, seed=7)
 viz = assemble_graph(layouted; config=SigmaConfig(height="520px"))
 savehtml("graph.html", viz)
 ```

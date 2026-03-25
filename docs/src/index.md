@@ -48,8 +48,9 @@ layout engine.
 - Pass `layout=:random`, `:circular`, `:grid`, `:spectral`, `:tree`, `:spring`, or `:force_directed`
   to `graph(...)` or `render(...)` when you want layout as a convenience.
 - For `layout=:tree`, choose `algorithm=:layered` or `:radial`.
-- For `layout=:force_directed`, choose `algorithm=:fruchterman_reingold`,
-  `:kamada_kawai`, or `:forceatlas2`.
+- For `layout=:force_directed`, use `algorithm=:sfdp` as the recommended default.
+- Alternative force-directed algorithms include `:fruchterman_reingold`,
+  `:kamada_kawai`, `:forceatlas2`, and `:network_spring`.
 - Pass a custom callable to `layout=` when the built-in layouts are not enough.
 
 ## Local Docs Build

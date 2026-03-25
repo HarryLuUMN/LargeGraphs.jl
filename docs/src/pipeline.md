@@ -55,8 +55,8 @@ viz = render(
     nodes,
     edges;
     layout=:force_directed,
-    algorithm=:fruchterman_reingold,
-    iterations=120,
+    algorithm=:sfdp,
+    iterations=80,
     seed=7,
     height="520px",
 )

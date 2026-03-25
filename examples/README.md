@@ -23,6 +23,9 @@ It shows:
 - multiple layout styles
 - large-graph viewing patterns
 
+If you want the fastest natural-looking default first, pair this with:
+- `demo_networklayout_layouts.ipynb`
+
 ### 3. `demo_graphsjl.ipynb`
 Use this when your upstream data already lives in `Graphs.jl`.
 
@@ -33,7 +36,15 @@ Use this when you want to inspect direct layout functions and compare their outp
 
 This is the right example when layout choice itself is the main question.
 
-### 5. `demo_interactions.ipynb`
+### 5. `demo_networklayout_layouts.ipynb`
+Use this when you want the current recommended fast force-directed path.
+
+It focuses on:
+- `algorithm=:network_spring`
+- `algorithm=:sfdp`
+- the `NetworkLayout.jl`-backed options that currently provide the best default speed
+
+### 6. `demo_interactions.ipynb`
 Use this when you want Julia-side interaction state in IJulia.
 
 It focuses on:
@@ -41,7 +52,7 @@ It focuses on:
 - selected neighbors
 - interaction event capture
 
-### 6. `demo_large_graph.jl`
+### 7. `demo_large_graph.jl`
 Use this for script-driven standalone export outside a notebook.
 
 It writes HTML directly to disk and is a good reference for batch or report workflows.
@@ -55,6 +66,7 @@ Start with:
 ### I want the shortest path to seeing a graph in a notebook
 Start with:
 - `demo_notebook.ipynb`
+- then `demo_networklayout_layouts.ipynb` if you want the recommended fast default layout path
 
 ### I already use `Graphs.jl`
 Start with:
@@ -62,6 +74,7 @@ Start with:
 
 ### I need to decide which layout to use
 Start with:
+- `demo_networklayout_layouts.ipynb`
 - `demo_layout_functions.ipynb`
 - then read `docs/src/layout-guide.md`
 - and compare against the staged workflow in `demo_staged_pipeline.ipynb` when you want to separate layout from rendering
