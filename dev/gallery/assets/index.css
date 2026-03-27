@@ -1,0 +1,155 @@
+body {
+  margin: 0;
+  font-family: "Avenir Next", Avenir, "Segoe UI", sans-serif;
+  background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+  color: #0f172a;
+}
+
+a {
+  color: inherit;
+}
+
+.page {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 48px 24px 72px;
+}
+
+.hero {
+  padding: 32px;
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at top left, rgba(14, 165, 233, 0.18), transparent 32%),
+    radial-gradient(circle at top right, rgba(99, 102, 241, 0.16), transparent 28%),
+    linear-gradient(135deg, #ffffff 0%, #e2e8f0 100%);
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.12);
+}
+
+.eyebrow {
+  margin: 0 0 12px;
+  font-size: 0.85rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #475569;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(2.2rem, 5vw, 4.3rem);
+  line-height: 0.95;
+}
+
+.hero p,
+.meta,
+.card p,
+.footer {
+  color: #334155;
+}
+
+.hero p {
+  max-width: 780px;
+  font-size: 1.05rem;
+  line-height: 1.65;
+}
+
+.meta {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 0.95rem;
+}
+
+.section-title {
+  margin: 42px 0 18px;
+  font-size: 1.25rem;
+}
+
+.cards {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 22px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.84);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+}
+
+.tag {
+  display: inline-flex;
+  align-self: flex-start;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.card h2 {
+  margin: 0;
+  font-size: 1.28rem;
+}
+
+.card p {
+  margin: 0;
+  line-height: 1.6;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: auto;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 14px;
+  border-radius: 999px;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.button.primary {
+  background: #0f172a;
+  color: #ffffff;
+}
+
+.button.secondary {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.footer {
+  margin-top: 36px;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+code {
+  font-family: "JuliaMono", "SFMono-Regular", monospace;
+  font-size: 0.94em;
+}
+
+@media (max-width: 640px) {
+  .page {
+    padding: 28px 16px 48px;
+  }
+
+  .hero,
+  .card {
+    border-radius: 20px;
+  }
+}
