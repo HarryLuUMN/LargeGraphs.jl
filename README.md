@@ -266,8 +266,8 @@ Current status:
 - `orthogonal_layout(nodes, edges; extent, layer_spacing, component_spacing)` places nodes on a grid with alternating orthogonal levels.
 - `spectral_layout(nodes, edges; extent, seed)` computes a spectral embedding from the graph Laplacian.
 - `tree_layout(nodes, edges; algorithm=:layered, kwargs...)` runs tree-oriented layouts with `:layered` and `:radial`.
-- `force_directed_layout(nodes, edges; algorithm=:fruchterman_reingold, kwargs...)` runs a force-directed family with `:fruchterman_reingold`, `:kamada_kawai`, `:forceatlas2`, `:network_spring`, or `:sfdp`.
-- `spring_layout(nodes, edges; iterations, seed, extent, gravity, cooling)` remains as a compatibility alias for Fruchterman-Reingold.
+- `force_directed_layout(nodes, edges; algorithm=:fruchterman_reingold, backend=:auto, kwargs...)` runs a force-directed family with `:fruchterman_reingold`, `:kamada_kawai`, `:forceatlas2`, `:network_spring`, or `:sfdp`. The experimental CUDA path is available for Fruchterman-Reingold via `backend=:gpu` or `algorithm=:fruchterman_reingold_gpu`.
+- `spring_layout(nodes, edges; iterations, seed, extent, gravity, cooling, backend=:auto)` remains as a compatibility alias for Fruchterman-Reingold and can also request the experimental GPU backend.
 
 ## Choose a layout
 
@@ -319,10 +319,25 @@ With `layout=:tree`, select the specific algorithm via `algorithm=`:
 
 With `layout=:force_directed`, select the specific algorithm via `algorithm=`:
 - `:fruchterman_reingold`
+- `:fruchterman_reingold_gpu` (experimental alias for Fruchterman-Reingold on `backend=:gpu`)
 - `:kamada_kawai`
 - `:forceatlas2`
 - `:network_spring`
 - `:sfdp`
+
+Set `backend=:gpu` to request the experimental CUDA-backed Fruchterman-Reingold implementation. `LargeGraphs` keeps CUDA as an optional weak dependency: if the `CUDA.jl` extension is not installed or the active machine does not have a functional CUDA runtime, the package warns once and falls back to the existing CPU solver.
+
+```julia
+layouted = layout_graph(
+    nodes,
+    edges;
+    layout=:force_directed,
+    algorithm=:fruchterman_reingold,
+    backend=:gpu,
+    iterations=120,
+    seed=7,
+)
+```
 
 ## Rendering Profiles
 

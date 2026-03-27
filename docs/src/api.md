@@ -286,30 +286,43 @@ Run individual stages or the full pipeline while collecting elapsed seconds and 
 ### `spring_layout`
 
 ```julia
-spring_layout(nodes, edges; iterations=100, seed=nothing, extent=1.0, gravity=0.05, cooling=0.9)
+spring_layout(nodes, edges; iterations=100, seed=nothing, extent=1.0, gravity=0.05, cooling=0.9, backend=:auto)
 ```
 
 Returns positioned `NodeSpec` values from a lightweight force-directed layout.
-This is a compatibility wrapper for Fruchterman-Reingold.
+This is a compatibility wrapper for Fruchterman-Reingold. Set `backend=:gpu` to
+request the experimental CUDA-backed solver.
 
 ### `force_directed_layout`
 
 ```julia
-force_directed_layout(nodes, edges; algorithm=:fruchterman_reingold, kwargs...)
+force_directed_layout(nodes, edges; algorithm=:fruchterman_reingold, backend=:auto, kwargs...)
 ```
 
 Returns positioned `NodeSpec` values from a force-directed algorithm family.
 Supported values for `algorithm`:
 
 - `:fruchterman_reingold`
+- `:fruchterman_reingold_gpu`
 - `:kamada_kawai`
 - `:forceatlas2`
 - `:network_spring`
 - `:sfdp`
 
+Supported values for `backend`:
+
+- `:auto`
+- `:cpu`
+- `:gpu`
+
 The `:network_spring` and `:sfdp` options are backed by `NetworkLayout.jl` and
 are currently the recommended fast-path choices when layout throughput matters
 more than strict continuity with the older built-in force solvers.
+
+The `:gpu` backend is currently experimental and implemented only for the
+Fruchterman-Reingold path through the optional `CUDA.jl` package extension. If
+CUDA is not installed or not functional on the active machine, LargeGraphs
+falls back to the CPU implementation and emits a warning.
 
 ### `savehtml`
 
