@@ -2,6 +2,27 @@ function _layout_rng(seed)
     isnothing(seed) ? Random.default_rng() : MersenneTwister(seed)
 end
 
+function _largegraphs_cuda_ext()
+    @static if isdefined(Base, :get_extension)
+        return Base.get_extension(@__MODULE__, :LargeGraphsCUDAExt)
+    end
+    nothing
+end
+
+function _gpu_force_directed_layout_impl()
+    ext = _largegraphs_cuda_ext()
+    isnothing(ext) && return nothing
+    isdefined(ext, :gpu_fruchterman_reingold_layout) || return nothing
+    getfield(ext, :gpu_fruchterman_reingold_layout)
+end
+
+function _gpu_force_directed_backend_available()
+    ext = _largegraphs_cuda_ext()
+    isnothing(ext) && return false
+    isdefined(ext, :gpu_backend_available) || return false
+    getfield(ext, :gpu_backend_available)()
+end
+
 function _with_position(node::NodeSpec, x, y)
     NodeSpec(
         node.id;

@@ -100,7 +100,7 @@ function hierarchy_layout(nodes, edges; kwargs...)
 end
 
 """
-    force_directed_layout(nodes, edges; algorithm=:fruchterman_reingold, kwargs...)
+    force_directed_layout(nodes, edges; algorithm=:fruchterman_reingold, backend=:auto, kwargs...)
 
 Compute a lightweight force-directed layout from the graph structure.
 
@@ -110,18 +110,23 @@ Supported algorithms:
 - `:forceatlas2`
 - `:network_spring`
 - `:sfdp`
+
+Backends:
+- `:auto` keeps the current CPU behavior unless `algorithm=:fruchterman_reingold_gpu`
+- `:cpu` forces the CPU implementation
+- `:gpu` requests the experimental CUDA-backed Fruchterman-Reingold path and falls back to CPU when unavailable
 """
-function force_directed_layout(nodes, edges; algorithm=:fruchterman_reingold, kwargs...)
-    _force_directed_layout(_normalize_nodes(nodes), _normalize_edges(edges); algorithm=algorithm, kwargs...)
+function force_directed_layout(nodes, edges; algorithm=:fruchterman_reingold, backend=:auto, kwargs...)
+    _force_directed_layout(_normalize_nodes(nodes), _normalize_edges(edges); algorithm=algorithm, backend=backend, kwargs...)
 end
 
 """
-    spring_layout(nodes, edges; iterations=100, seed=nothing, extent=1.0, gravity=0.05, cooling=0.9)
+    spring_layout(nodes, edges; iterations=100, seed=nothing, extent=1.0, gravity=0.05, cooling=0.9, backend=:auto)
 
 Compatibility wrapper for Fruchterman-Reingold force-directed layout.
 """
-function spring_layout(nodes, edges; kwargs...)
-    force_directed_layout(nodes, edges; algorithm=:fruchterman_reingold, kwargs...)
+function spring_layout(nodes, edges; backend=:auto, kwargs...)
+    force_directed_layout(nodes, edges; algorithm=:fruchterman_reingold, backend=backend, kwargs...)
 end
 
 function _apply_layout(nodes::Vector{NodeSpec}, edges::Vector{EdgeSpec}, layout; layout_kwargs...)
@@ -602,8 +607,10 @@ function _orient_tree_component!(root_index, undirected, visited, parent, depths
     nothing
 end
 
-function _force_directed_layout(nodes::Vector{NodeSpec}, edges::Vector{EdgeSpec}; algorithm=:fruchterman_reingold, kwargs...)
+function _force_directed_layout(nodes::Vector{NodeSpec}, edges::Vector{EdgeSpec}; algorithm=:fruchterman_reingold, backend=:auto, kwargs...)
     selected = _force_directed_algorithm(algorithm)
+    selected_backend = _force_directed_backend(selected, backend, algorithm)
+    selected_backend === :gpu && return _gpu_force_directed_layout(nodes, edges; algorithm=selected, kwargs...)
     selected === :fruchterman_reingold && return _fruchterman_reingold_layout(nodes, edges; kwargs...)
     selected === :kamada_kawai && return _kamada_kawai_layout(nodes, edges; kwargs...)
     selected === :forceatlas2 && return _forceatlas2_layout(nodes, edges; kwargs...)
@@ -614,6 +621,8 @@ end
 
 function _force_directed_algorithm(algorithm::Symbol)
     algorithm === :fruchterman_reingold && return :fruchterman_reingold
+    algorithm === :fruchterman_reingold_gpu && return :fruchterman_reingold
+    algorithm === :gpu_fruchterman_reingold && return :fruchterman_reingold
     algorithm === :spring && return :fruchterman_reingold
     algorithm === :kamada_kawai && return :kamada_kawai
     algorithm === :forceatlas2 && return :forceatlas2
@@ -625,6 +634,32 @@ function _force_directed_algorithm(algorithm::Symbol)
 end
 
 _force_directed_algorithm(algorithm::AbstractString) = _force_directed_algorithm(Symbol(lowercase(strip(algorithm))))
+
+function _force_directed_backend(algorithm::Symbol, backend, original_algorithm=algorithm)
+    normalized = _force_directed_backend(backend)
+    original_algorithm in (:fruchterman_reingold_gpu, :gpu_fruchterman_reingold) && (normalized = :gpu)
+    normalized === :gpu && algorithm !== :fruchterman_reingold && error("GPU backend currently supports only :fruchterman_reingold")
+    normalized
+end
+
+function _force_directed_backend(backend::Symbol)
+    backend === :auto && return :cpu
+    backend === :cpu && return :cpu
+    backend === :gpu && return :gpu
+    error("Unsupported force-directed backend: $(backend)")
+end
+
+_force_directed_backend(backend::AbstractString) = _force_directed_backend(Symbol(lowercase(strip(backend))))
+
+function _gpu_force_directed_layout(nodes::Vector{NodeSpec}, edges::Vector{EdgeSpec}; algorithm=:fruchterman_reingold, kwargs...)
+    algorithm === :fruchterman_reingold || error("GPU backend currently supports only :fruchterman_reingold")
+    implementation = _gpu_force_directed_layout_impl()
+    if isnothing(implementation) || !_gpu_force_directed_backend_available()
+        @warn "LargeGraphs GPU layout requested but CUDA is unavailable; falling back to the CPU Fruchterman-Reingold layout"
+        return _fruchterman_reingold_layout(nodes, edges; kwargs...)
+    end
+    implementation(nodes, edges; kwargs...)
+end
 
 function _fruchterman_reingold_layout(nodes::Vector{NodeSpec}, edges::Vector{EdgeSpec}; iterations=100, seed=nothing, extent=1.0, gravity=0.05, cooling=0.9)
     count = length(nodes)

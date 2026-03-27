@@ -1,4 +1,5 @@
 using Test
+using Logging
 using LargeGraphs
 using Graphs
 
@@ -148,6 +149,24 @@ using Graphs
     @test all(-1.5 <= node.x <= 1.5 for node in fr_nodes)
     @test all(-1.5 <= node.y <= 1.5 for node in fr_nodes)
     @test length(Set((round(node.x, digits=6), round(node.y, digits=6)) for node in fr_nodes)) == 4
+
+    gpu_alias_nodes = force_directed_layout(layout_nodes, edges; algorithm=:fruchterman_reingold_gpu, iterations=40, seed=5, extent=1.5)
+    @test [node.id for node in gpu_alias_nodes] == ["a", "b", "c", "d"]
+    @test all(-1.5 <= node.x <= 1.5 for node in gpu_alias_nodes)
+    @test all(-1.5 <= node.y <= 1.5 for node in gpu_alias_nodes)
+
+    gpu_fallback_logs = @test_logs (:warn, r"GPU layout requested") force_directed_layout(
+        layout_nodes,
+        edges;
+        algorithm=:fruchterman_reingold,
+        backend=:gpu,
+        iterations=40,
+        seed=5,
+        extent=1.5,
+    )
+    @test [node.id for node in gpu_fallback_logs] == ["a", "b", "c", "d"]
+    @test all(-1.5 <= node.x <= 1.5 for node in gpu_fallback_logs)
+    @test all(-1.5 <= node.y <= 1.5 for node in gpu_fallback_logs)
 
     kk_nodes = force_directed_layout(layout_nodes, edges; algorithm=:kamada_kawai, iterations=80, seed=5, extent=1.5)
     @test [node.id for node in kk_nodes] == ["a", "b", "c", "d"]
@@ -418,6 +437,8 @@ using Graphs
     @test interactive_viz.interaction["bridge"]["targetName"] == "largegraphs_events"
 
     @test_throws "Unsupported force-directed algorithm" force_directed_layout(layout_nodes, edges; algorithm=:unknown)
+    @test_throws "Unsupported force-directed backend" force_directed_layout(layout_nodes, edges; algorithm=:fruchterman_reingold, backend=:quantum)
+    @test_throws "GPU backend currently supports only :fruchterman_reingold" force_directed_layout(layout_nodes, edges; algorithm=:sfdp, backend=:gpu)
     @test_throws "Unsupported tree layout algorithm" tree_layout(tree_nodes, tree_edges; algorithm=:unknown)
     @test_throws "Unknown tree root" tree_layout(tree_nodes, tree_edges; root="missing")
     @test_throws "Edges reference node ids that are missing from the node list" render([(id="1",)], [(source="1", target="2")])
