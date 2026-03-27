@@ -1,0 +1,207 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LargeGraphs Demo</title>
+</head>
+<body>
+<div id="sigma-0c7a77ae-7a26-4e4f-9ad4-b0ea22ce1a33" class="large-graphs-jl-root" style="width: 100%;">
+  <div class="large-graphs-jl-stage" style="width: 100%; height: 680px; background: #f8fafc;"></div>
+</div>
+<script type="application/json" id="sigma-0c7a77ae-7a26-4e4f-9ad4-b0ea22ce1a33-payload">{"id":"sigma-0c7a77ae-7a26-4e4f-9ad4-b0ea22ce1a33","nodes":[{"label":"Hub","id":"hub","x":2.6,"color":"#0f172a","size":4.5,"y":0.0},{"label":"Search","id":"n1","x":1.9917155521093428,"color":"#2563eb","size":2.2,"y":1.671247785185002},{"label":"Pipelines","id":"n2","x":0.4514852619340191,"color":"#0ea5e9","size":2.0,"y":2.560500157831741},{"label":"Exports","id":"n3","x":-1.2999999999999994,"color":"#0891b2","size":2.0,"y":2.2516660498395407},{"label":"Metrics","id":"n4","x":-2.4432008140433616,"color":"#14b8a6","size":2.2,"y":0.8892523726467391},{"label":"Docs","id":"n5","x":-2.443200814043362,"color":"#22c55e","size":1.9,"y":-0.8892523726467385},{"label":"Benchmarks","id":"n6","x":-1.3000000000000012,"color":"#84cc16","size":2.1,"y":-2.25166604983954},{"label":"Sharing","id":"n7","x":0.45148526193401795,"color":"#f59e0b","size":2.0,"y":-2.5605001578317412},{"label":"Reports","id":"n8","x":1.9917155521093424,"color":"#f97316","size":2.1,"y":-1.671247785185003}],"edges":[{"key":"9122d53b-4aa2-4b0a-bfe9-ce39c555c8e5","source":"hub","color":"#cbd5e1","target":"n1","size":1.3},{"key":"200d71f5-6f50-4d36-8511-d1610b1c64c5","source":"hub","color":"#cbd5e1","target":"n2","size":1.3},{"key":"4e0956f8-2d2d-4848-a2b2-1f917018e07b","source":"hub","color":"#cbd5e1","target":"n3","size":1.3},{"key":"f83a8a97-bd75-43df-903d-330e8116b180","source":"hub","color":"#cbd5e1","target":"n4","size":1.3},{"key":"d89d7b39-88c0-4690-86d2-4005986a5c94","source":"hub","color":"#cbd5e1","target":"n5","size":1.3},{"key":"17652024-9623-4de6-8d46-cd3c50dbaf21","source":"hub","color":"#cbd5e1","target":"n6","size":1.3},{"key":"a96709b0-a63b-4651-850d-1277c80bc1be","source":"hub","color":"#cbd5e1","target":"n7","size":1.3},{"key":"390558d3-dc3e-4a50-bb5d-ad6be11e86ca","source":"hub","color":"#cbd5e1","target":"n8","size":1.3},{"key":"c063d80a-38c9-447b-9759-d3a4ab67f867","source":"n1","color":"#94a3b8","target":"n2","size":0.7},{"key":"1df36773-0488-4db8-86a2-bc1ae7c5dffc","source":"n2","color":"#94a3b8","target":"n3","size":0.7},{"key":"28f0a123-88e9-404c-bb34-a7dd9fe020bf","source":"n3","color":"#94a3b8","target":"n4","size":0.7},{"key":"0ad492a7-0ef0-4b2d-8cfc-067d6026fa6f","source":"n4","color":"#94a3b8","target":"n5","size":0.7},{"key":"3cc50d65-f5cc-4217-bae6-d78665eac05c","source":"n5","color":"#94a3b8","target":"n6","size":0.7},{"key":"adfdc078-6938-4fd0-90e4-a249406a98b7","source":"n6","color":"#94a3b8","target":"n7","size":0.7},{"key":"fecd11a1-b832-4589-89d5-2f5183c2feeb","source":"n7","color":"#94a3b8","target":"n8","size":0.7},{"key":"db84e351-57ff-4ae0-aef5-0549980e2ddc","source":"n8","color":"#94a3b8","target":"n1","size":0.7}],"config":{"labelGridCellSize":72,"minNodeSize":2.5,"height":"680px","labelDensity":1.2,"renderEdgeLabels":true,"width":"100%","cameraRatio":0.9,"hideEdgesOnMove":false,"maxNodeSize":20.0,"background":"#f8fafc"},"interaction":{"enableSelection":true,"enableTooltips":true,"highlightNeighbors":true}}</script>
+<script>
+(function () {
+  if (window.LargeGraphsOffline) {
+    return;
+  }
+
+  function clamp(value, min, max) {
+    return Math.min(max, Math.max(min, value));
+  }
+
+  function parsePayload(root) {
+    const payloadNode = root && document.getElementById(root.id + "-payload");
+    if (!payloadNode) {
+      return null;
+    }
+    try {
+      return JSON.parse(payloadNode.textContent || "{}");
+    } catch (_error) {
+      return null;
+    }
+  }
+
+  function boundsFromNodes(nodes) {
+    let minX = Infinity;
+    let maxX = -Infinity;
+    let minY = Infinity;
+    let maxY = -Infinity;
+    for (const node of nodes) {
+      const x = Number(node.x) || 0;
+      const y = Number(node.y) || 0;
+      minX = Math.min(minX, x);
+      maxX = Math.max(maxX, x);
+      minY = Math.min(minY, y);
+      maxY = Math.max(maxY, y);
+    }
+    if (!Number.isFinite(minX) || !Number.isFinite(maxX) || !Number.isFinite(minY) || !Number.isFinite(maxY)) {
+      return { minX: -1, maxX: 1, minY: -1, maxY: 1 };
+    }
+    if (Math.abs(maxX - minX) < 1.0e-9) {
+      minX -= 1;
+      maxX += 1;
+    }
+    if (Math.abs(maxY - minY) < 1.0e-9) {
+      minY -= 1;
+      maxY += 1;
+    }
+    return { minX, maxX, minY, maxY };
+  }
+
+  function render(rootId) {
+    const root = document.getElementById(rootId);
+    if (!root) {
+      return null;
+    }
+
+    const stage = root.querySelector(".large-graphs-jl-stage");
+    if (!stage) {
+      return null;
+    }
+
+    const payload = parsePayload(root);
+    if (!payload) {
+      stage.textContent = "Unable to parse graph payload";
+      return null;
+    }
+
+    stage.innerHTML = "";
+    stage.style.position = "relative";
+
+    const width = Math.max(1, Math.round(stage.clientWidth || stage.getBoundingClientRect().width || 1));
+    const height = Math.max(1, Math.round(stage.clientHeight || stage.getBoundingClientRect().height || 1));
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    canvas.style.width = "100%";
+    canvas.style.height = "100%";
+    stage.appendChild(canvas);
+
+    const hint = document.createElement("div");
+    hint.textContent = "Offline mode";
+    hint.style.cssText = "position:absolute;right:12px;bottom:10px;font:600 11px/1.2 ui-sans-serif,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#334155;background:rgba(255,255,255,0.8);padding:4px 8px;border-radius:999px;border:1px solid rgba(148,163,184,0.35);";
+    stage.appendChild(hint);
+
+    const context = canvas.getContext("2d");
+    if (!context) {
+      return null;
+    }
+
+    const nodes = Array.isArray(payload.nodes) ? payload.nodes : [];
+    const edges = Array.isArray(payload.edges) ? payload.edges : [];
+    const nodeMap = new Map();
+    for (const node of nodes) {
+      nodeMap.set(String(node.id), node);
+    }
+
+    const baseBounds = boundsFromNodes(nodes);
+    let zoom = 1;
+    let panX = 0;
+    let panY = 0;
+    let dragStart = null;
+
+    function project(node) {
+      const padding = 36;
+      const spanX = baseBounds.maxX - baseBounds.minX;
+      const spanY = baseBounds.maxY - baseBounds.minY;
+      const sx = (width - 2 * padding) / spanX;
+      const sy = (height - 2 * padding) / spanY;
+      const scale = Math.min(sx, sy) * zoom;
+      const cx = (baseBounds.minX + baseBounds.maxX) / 2;
+      const cy = (baseBounds.minY + baseBounds.maxY) / 2;
+      return {
+        x: (Number(node.x) - cx) * scale + width / 2 + panX,
+        y: (cy - Number(node.y)) * scale + height / 2 + panY,
+      };
+    }
+
+    function draw() {
+      context.clearRect(0, 0, width, height);
+      context.fillStyle = payload.config?.background || "#ffffff";
+      context.fillRect(0, 0, width, height);
+
+      context.lineCap = "round";
+      for (const edge of edges) {
+        const source = nodeMap.get(String(edge.source));
+        const target = nodeMap.get(String(edge.target));
+        if (!source || !target) {
+          continue;
+        }
+        const a = project(source);
+        const b = project(target);
+        context.beginPath();
+        context.moveTo(a.x, a.y);
+        context.lineTo(b.x, b.y);
+        context.strokeStyle = edge.color || "#94a3b8";
+        context.lineWidth = clamp(Number(edge.size) || 1, 0.5, 6);
+        context.globalAlpha = 0.7;
+        context.stroke();
+      }
+
+      context.globalAlpha = 1;
+      for (const node of nodes) {
+        const p = project(node);
+        const radius = clamp((Number(node.size) || 1) * 2.4, 2, 14);
+        context.beginPath();
+        context.arc(p.x, p.y, radius, 0, 2 * Math.PI);
+        context.fillStyle = node.color || "#2563eb";
+        context.fill();
+
+        if (payload.config?.labelDensity !== 0 && node.label) {
+          context.fillStyle = "#0f172a";
+          context.font = "500 12px ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+          context.textBaseline = "middle";
+          context.fillText(String(node.label), p.x + radius + 4, p.y);
+        }
+      }
+    }
+
+    canvas.addEventListener("wheel", function (event) {
+      event.preventDefault();
+      const direction = event.deltaY > 0 ? -1 : 1;
+      const nextZoom = zoom * (1 + direction * 0.08);
+      zoom = clamp(nextZoom, 0.25, 8);
+      draw();
+    }, { passive: false });
+
+    canvas.addEventListener("pointerdown", function (event) {
+      dragStart = { x: event.clientX, y: event.clientY, panX, panY };
+      canvas.setPointerCapture(event.pointerId);
+    });
+
+    canvas.addEventListener("pointermove", function (event) {
+      if (!dragStart) {
+        return;
+      }
+      panX = dragStart.panX + (event.clientX - dragStart.x);
+      panY = dragStart.panY + (event.clientY - dragStart.y);
+      draw();
+    });
+
+    canvas.addEventListener("pointerup", function () {
+      dragStart = null;
+    });
+
+    draw();
+    return { redraw: draw };
+  }
+
+  window.LargeGraphsOffline = { render };
+})();
+
+void window.LargeGraphsOffline.render("sigma-0c7a77ae-7a26-4e4f-9ad4-b0ea22ce1a33");
+</script>
+
+</body>
+</html>
