@@ -47,6 +47,7 @@ If you are trying the package for the first time, start with:
 1. `examples/demo_staged_pipeline.ipynb`
 2. `examples/demo_notebook.ipynb`
 3. `examples/demo_networklayout_layouts.ipynb`
+4. `gallery/build/index.html`
 
 ## Installation
 
@@ -172,6 +173,7 @@ The repository includes:
 - `examples/demo_notebook.ipynb` for the general notebook path.
 - `examples/demo_networklayout_layouts.ipynb` for the current fast default layout path.
 - `examples/demo_graphsjl.ipynb` for direct `Graphs.jl` rendering.
+- `examples/demo_gallery_build.ipynb` for the standalone gallery build workflow.
 - `examples/demo_layout_functions.ipynb` for direct layout function comparison.
 - `examples/demo_interactions.ipynb` for click/hover interaction and Julia-side state updates.
 - `examples/demo_large_graph.jl` for script-based standalone export.
@@ -190,6 +192,16 @@ using LargeGraphs
 When a graph does not render in Jupyter, open the browser console first. The
 viewer loads Sigma.js and Graphology as browser ESM modules, so frontend errors
 usually show up there immediately.
+
+## Gallery
+
+The repository includes a top-level static gallery under `gallery/`. This is
+the showcase/output area for browseable exports and is intentionally separate
+from the `Documenter.jl` docs build.
+
+- Build instructions and status live in [`gallery/README.md`](gallery/README.md).
+- The committed static site entry point is [`gallery/build/index.html`](gallery/build/index.html).
+- Rebuild it from the repository root with `julia --project=. gallery/scripts/build_gallery.jl`.
 
 ## Benchmarks
 

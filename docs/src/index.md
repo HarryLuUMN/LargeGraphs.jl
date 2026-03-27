@@ -40,6 +40,7 @@ layout engine.
 - Use [API reference](api.md) for constructor and function details.
 - Use [Notebook guide](notebooks.md) for IJulia and Jupyter workflows.
 - Use `examples/README.md` in the repository root when you want a workflow-oriented map of the example notebooks and scripts.
+- Use `gallery/README.md` in the repository root for the standalone gallery build and `gallery/build/index.html` for the latest committed static showcase output.
 - Use [Troubleshooting](troubleshooting.md) when rendering does not behave as expected.
 - Use the repository `benchmarks/` subproject for rendering benchmark scripts and results.
 

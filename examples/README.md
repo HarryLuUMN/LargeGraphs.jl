@@ -51,6 +51,14 @@ It focuses on:
 - selected neighbors
 - interaction event capture
 
+### `demo_gallery_build.ipynb`
+Use this when you want to rebuild the standalone gallery from a notebook-shaped workflow.
+
+It focuses on:
+- calling the gallery build script
+- locating `gallery/build/`
+- understanding how the showcase output differs from tutorial examples
+
 ### `demo_large_graph.jl`
 Use this for script-driven standalone export outside a notebook.
 
@@ -86,3 +94,9 @@ Start with:
 ### I want standalone HTML output from a script
 Start with:
 - `demo_large_graph.jl`
+
+### I want a browseable showcase site
+Start with:
+- `demo_gallery_build.ipynb`
+- then open `gallery/build/index.html`
+- and read `gallery/README.md`

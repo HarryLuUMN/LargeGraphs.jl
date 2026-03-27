@@ -90,6 +90,7 @@ For a workflow-oriented overview of the repository examples, see `examples/READM
 
 - `examples/demo_staged_pipeline.ipynb` shows the recommended staged workflow.
 - `examples/demo_notebook.ipynb` shows notebook rendering workflows and large-graph viewing.
+- `examples/demo_gallery_build.ipynb` shows how to build the standalone gallery from a notebook-friendly workflow.
 - `examples/demo_layout_functions.ipynb` shows direct layout functions returning positioned nodes.
 - `examples/demo_graphsjl.ipynb` shows the `Graphs.jl` input workflow.
 - `examples/demo_interactions.ipynb` shows the notebook interaction workflow.
