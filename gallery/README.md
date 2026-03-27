@@ -30,12 +30,15 @@ needing to generate it.
 
 ## Current status
 
-This first gallery pass includes curated cases for:
+The current gallery includes curated cases for:
 
-- built-in layout styles
+- built-in layout styles and hierarchy views
 - styling and presentation-oriented configuration
 - client-side interaction affordances
-- a larger `Graphs.jl` rendering case
+- larger `Graphs.jl` rendering and a 50k cheap-layout preview
+- denser graph structure rendered with the spectral layout
+- an experimental GPU-requested layout example with safe CPU fallback
+- staged pipeline runtime comparison output
 
 The structure is intentionally small so new showcase cases can be added by
 editing one source file and rerunning the build script.
