@@ -43,8 +43,8 @@ function _node_payload(node::NodeSpec; coordinate_step::Float64)
             "id" => node.id,
             "x" => _quantize_coordinate(node.x, coordinate_step),
             "y" => _quantize_coordinate(node.y, coordinate_step),
-            "size" => node.size,
         ),
+        _defaulted_payload_pair("size", node.size, 1.0),
         isnothing(node.label) ? Dict{String, Any}() : Dict("label" => node.label),
         isnothing(node.color) ? Dict{String, Any}() : Dict("color" => node.color),
         node.attributes,
@@ -57,8 +57,8 @@ function _edge_payload(edge::EdgeSpec)
             "key" => edge.id,
             "source" => edge.source,
             "target" => edge.target,
-            "size" => edge.size,
         ),
+        _defaulted_payload_pair("size", edge.size, 1.0),
         isnothing(edge.label) ? Dict{String, Any}() : Dict("label" => edge.label),
         isnothing(edge.color) ? Dict{String, Any}() : Dict("color" => edge.color),
         edge.attributes,
@@ -66,17 +66,16 @@ function _edge_payload(edge::EdgeSpec)
 end
 
 function _config_payload(config::SigmaConfig)
-    Dict(
-        "width" => config.width,
-        "height" => config.height,
-        "background" => config.background,
-        "cameraRatio" => config.camera_ratio,
-        "renderEdgeLabels" => config.render_edge_labels,
-        "hideEdgesOnMove" => config.hide_edges_on_move,
-        "labelDensity" => config.label_density,
-        "labelGridCellSize" => config.label_grid_cell_size,
-        "maxNodeSize" => config.max_node_size,
-        "minNodeSize" => config.min_node_size,
+    merge(
+        Dict{String, Any}(),
+        _defaulted_payload_pair("background", config.background, "#ffffff"),
+        _defaulted_payload_pair("cameraRatio", config.camera_ratio, 1.0),
+        _defaulted_payload_pair("renderEdgeLabels", config.render_edge_labels, false),
+        _defaulted_payload_pair("hideEdgesOnMove", config.hide_edges_on_move, false),
+        _defaulted_payload_pair("labelDensity", config.label_density, 1.0),
+        _defaulted_payload_pair("labelGridCellSize", config.label_grid_cell_size, 80),
+        _defaulted_payload_pair("maxNodeSize", config.max_node_size, 16.0),
+        _defaulted_payload_pair("minNodeSize", config.min_node_size, 2.0),
     )
 end
 
@@ -106,6 +105,10 @@ function _trim_float(value::AbstractFloat)
     rounded = round(Float64(value); digits=6)
     abs(rounded) < 5.0e-7 && return 0.0
     rounded
+end
+
+function _defaulted_payload_pair(key::String, value, default)
+    value == default ? Dict{String, Any}() : Dict{String, Any}(key => value)
 end
 
 function _html(value::SigmaGraph; runtime=:sigma)

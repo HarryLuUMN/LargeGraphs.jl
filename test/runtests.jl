@@ -474,6 +474,8 @@ using Graphs
     @test occursin("Paused Preview", read(joinpath(pkgdir(LargeGraphs), "assets", "sigma-viewer.js"), String))
     @test occursin("Reactivate graph", read(joinpath(pkgdir(LargeGraphs), "assets", "sigma-viewer.js"), String))
     @test occursin("drawFallbackPreview", read(joinpath(pkgdir(LargeGraphs), "assets", "sigma-viewer.js"), String))
+    @test occursin("normalizePayload", read(joinpath(pkgdir(LargeGraphs), "assets", "sigma-viewer.js"), String))
+    @test occursin("Object.assign({ size: 1 }, node)", read(joinpath(pkgdir(LargeGraphs), "assets", "sigma-viewer.js"), String))
     @test occursin("createPreview(root, stage)", read(joinpath(pkgdir(LargeGraphs), "assets", "sigma-viewer.js"), String))
     @test occursin("aria-label\", \"Fit view\"", read(joinpath(pkgdir(LargeGraphs), "assets", "sigma-viewer.js"), String))
     @test occursin("Lock camera", read(joinpath(pkgdir(LargeGraphs), "assets", "sigma-viewer.js"), String))
@@ -497,6 +499,8 @@ using Graphs
         label_density=2 / 3,
     )
     precision_payload = LargeGraphs._graph_payload(precision_viz)
+    @test !haskey(precision_payload["nodes"][1], "size")
+    @test !haskey(precision_payload["config"], "background")
     @test precision_payload["nodes"][1]["x"] == 0.333313
     @test precision_payload["nodes"][1]["y"] == 0.666687
     @test precision_payload["nodes"][1]["weight"] == 0.333333
@@ -524,6 +528,7 @@ using Graphs
     @test occursin("<!doctype html>", exported)
     @test occursin("large-graphs-jl-root", exported)
     @test occursin("window.LargeGraphsOffline.render", exported)
+    @test occursin("normalizePayload", read(joinpath(pkgdir(LargeGraphs), "assets", "offline-viewer.js"), String))
     @test !occursin("cdn.jsdelivr.net", exported)
 
     output_sigma = joinpath(tempdir, "graph-sigma.html")

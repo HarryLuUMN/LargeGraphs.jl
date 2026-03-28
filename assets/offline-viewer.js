@@ -7,13 +7,31 @@
     return Math.min(max, Math.max(min, value));
   }
 
+  function normalizePayload(rawPayload) {
+    const payload = rawPayload && typeof rawPayload === "object" ? rawPayload : {};
+    const config = payload.config && typeof payload.config === "object" ? payload.config : {};
+    return {
+      id: payload.id,
+      config: {
+        background: config.background ?? "#ffffff",
+        labelDensity: config.labelDensity ?? 1,
+      },
+      nodes: (Array.isArray(payload.nodes) ? payload.nodes : []).map(function (node) {
+        return Object.assign({ size: 1 }, node);
+      }),
+      edges: (Array.isArray(payload.edges) ? payload.edges : []).map(function (edge) {
+        return Object.assign({ size: 1 }, edge);
+      }),
+    };
+  }
+
   function parsePayload(root) {
     const payloadNode = root && document.getElementById(root.id + "-payload");
     if (!payloadNode) {
       return null;
     }
     try {
-      return JSON.parse(payloadNode.textContent || "{}");
+      return normalizePayload(JSON.parse(payloadNode.textContent || "{}"));
     } catch (_error) {
       return null;
     }

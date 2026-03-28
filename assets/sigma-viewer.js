@@ -312,6 +312,33 @@
       .replaceAll("&amp;", "&");
   }
 
+  function normalizePayload(rawPayload) {
+    const payload = rawPayload && typeof rawPayload === "object" ? rawPayload : {};
+    const config = payload.config && typeof payload.config === "object" ? payload.config : {};
+    const nodes = Array.isArray(payload.nodes) ? payload.nodes : [];
+    const edges = Array.isArray(payload.edges) ? payload.edges : [];
+    return {
+      id: payload.id,
+      interaction: payload.interaction || {},
+      config: {
+        background: config.background ?? "#ffffff",
+        cameraRatio: config.cameraRatio ?? 1,
+        renderEdgeLabels: config.renderEdgeLabels ?? false,
+        hideEdgesOnMove: config.hideEdgesOnMove ?? false,
+        labelDensity: config.labelDensity ?? 1,
+        labelGridCellSize: config.labelGridCellSize ?? 80,
+        maxNodeSize: config.maxNodeSize ?? 16,
+        minNodeSize: config.minNodeSize ?? 2,
+      },
+      nodes: nodes.map(function (node) {
+        return Object.assign({ size: 1 }, node);
+      }),
+      edges: edges.map(function (edge) {
+        return Object.assign({ size: 1 }, edge);
+      }),
+    };
+  }
+
   function parsePayload(root) {
     const payloadNode = root && document.getElementById(root.id + "-payload");
     if (!payloadNode) {
@@ -319,7 +346,7 @@
     }
 
     try {
-      return JSON.parse(decodeHtml(payloadNode.textContent));
+      return normalizePayload(JSON.parse(decodeHtml(payloadNode.textContent)));
     } catch (_error) {
       return null;
     }
@@ -914,7 +941,7 @@
     stage.appendChild(status);
 
     try {
-      const payload = JSON.parse(payloadNode.textContent || "{}");
+      const payload = normalizePayload(JSON.parse(payloadNode.textContent || "{}"));
       root.__largeGraphsJlInteraction = payload.interaction || {};
       const interactionData = buildNeighborhoods(payload);
       root.__largeGraphsJlNeighborhoods = interactionData.neighborhoods;
