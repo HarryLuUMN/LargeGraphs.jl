@@ -27,21 +27,22 @@ function Base.show(io::IO, ::MIME"text/plain", value::SigmaGraph)
 end
 
 function _graph_payload(value::SigmaGraph)
+    coordinate_step = _coordinate_quantization_step(value.nodes)
     (
         id=value.id,
-        nodes=[_node_payload(node) for node in value.nodes],
+        nodes=[_node_payload(node; coordinate_step=coordinate_step) for node in value.nodes],
         edges=[_edge_payload(edge) for edge in value.edges],
         config=_config_payload(value.config),
         interaction=value.interaction,
     )
 end
 
-function _node_payload(node::NodeSpec)
+function _node_payload(node::NodeSpec; coordinate_step::Float64)
     merge(
         Dict{String, Any}(
             "id" => node.id,
-            "x" => node.x,
-            "y" => node.y,
+            "x" => _quantize_coordinate(node.x, coordinate_step),
+            "y" => _quantize_coordinate(node.y, coordinate_step),
             "size" => node.size,
         ),
         isnothing(node.label) ? Dict{String, Any}() : Dict("label" => node.label),
@@ -78,6 +79,18 @@ function _config_payload(config::SigmaConfig)
         "minNodeSize" => config.min_node_size,
     )
 end
+
+function _coordinate_quantization_step(nodes)
+    isempty(nodes) && return 0.0
+    min_x = minimum(node.x for node in nodes)
+    max_x = maximum(node.x for node in nodes)
+    min_y = minimum(node.y for node in nodes)
+    max_y = maximum(node.y for node in nodes)
+    span = max(max_x - min_x, max_y - min_y, 1.0)
+    span / 16_384
+end
+
+_quantize_coordinate(value::Real, step::Float64) = step <= 0 ? Float64(value) : round(Float64(value) / step) * step
 
 function _html(value::SigmaGraph; runtime=:sigma)
     graph_id = _escape_html_attribute(value.id)

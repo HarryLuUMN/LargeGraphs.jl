@@ -444,6 +444,23 @@ using Graphs
     @test_throws "Edges reference node ids that are missing from the node list" render([(id="1",)], [(source="1", target="2")])
     @test_throws "Duplicate node ids are not supported" render([(id="1",), (id="1",)], [(source="1", target="1")])
 
+    payload = LargeGraphs._graph_payload(viz)
+    @test payload.nodes[1]["x"] == 0.0
+    @test payload.nodes[1]["y"] == 0.0
+    @test payload.nodes[2]["x"] == 1.0
+    @test payload.nodes[2]["y"] == 1.0
+
+    quantized_viz = render(
+        [(id="q", x=0.123456789, y=-0.987654321)],
+        EdgeSpec[];
+        id="quantized",
+    )
+    quantized_payload = LargeGraphs._graph_payload(quantized_viz)
+    @test quantized_payload.nodes[1]["x"] != 0.123456789
+    @test quantized_payload.nodes[1]["y"] != -0.987654321
+    @test isapprox(quantized_payload.nodes[1]["x"], 0.123456789; atol=1.0e-4)
+    @test isapprox(quantized_payload.nodes[1]["y"], -0.987654321; atol=1.0e-4)
+
     html = sprint(show, MIME"text/html"(), viz)
     @test occursin("large-graphs-jl-root", html)
     @test occursin("window.LargeGraphs.render", html)
