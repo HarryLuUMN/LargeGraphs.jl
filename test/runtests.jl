@@ -445,10 +445,10 @@ using Graphs
     @test_throws "Duplicate node ids are not supported" render([(id="1",), (id="1",)], [(source="1", target="1")])
 
     payload = LargeGraphs._graph_payload(viz)
-    @test payload.nodes[1]["x"] == 0.0
-    @test payload.nodes[1]["y"] == 0.0
-    @test payload.nodes[2]["x"] == 1.0
-    @test payload.nodes[2]["y"] == 1.0
+    @test payload["nodes"][1]["x"] == 0.0
+    @test payload["nodes"][1]["y"] == 0.0
+    @test payload["nodes"][2]["x"] == 1.0
+    @test payload["nodes"][2]["y"] == 1.0
 
     quantized_viz = render(
         [(id="q", x=0.123456789, y=-0.987654321)],
@@ -456,10 +456,10 @@ using Graphs
         id="quantized",
     )
     quantized_payload = LargeGraphs._graph_payload(quantized_viz)
-    @test quantized_payload.nodes[1]["x"] != 0.123456789
-    @test quantized_payload.nodes[1]["y"] != -0.987654321
-    @test isapprox(quantized_payload.nodes[1]["x"], 0.123456789; atol=1.0e-4)
-    @test isapprox(quantized_payload.nodes[1]["y"], -0.987654321; atol=1.0e-4)
+    @test quantized_payload["nodes"][1]["x"] != 0.123456789
+    @test quantized_payload["nodes"][1]["y"] != -0.987654321
+    @test isapprox(quantized_payload["nodes"][1]["x"], 0.123456789; atol=1.0e-4)
+    @test isapprox(quantized_payload["nodes"][1]["y"], -0.987654321; atol=1.0e-4)
 
     html = sprint(show, MIME"text/html"(), viz)
     @test occursin("large-graphs-jl-root", html)
@@ -488,6 +488,23 @@ using Graphs
     @test occursin("clickNode", read(joinpath(pkgdir(LargeGraphs), "assets", "sigma-viewer.js"), String))
     @test occursin("enableTooltips", html)
     @test occursin("highlightNeighbors", html)
+
+    precision_viz = render(
+        [(id="p", x=0.333333333333, y=0.666666666667, attributes=(weight=1 / 3, nested=Dict("score" => 2 / 3)))],
+        [(source="p", target="p", size=1 / 3, attributes=(strength=2 / 3,))];
+        id="precision",
+        camera_ratio=1 / 3,
+        label_density=2 / 3,
+    )
+    precision_payload = LargeGraphs._graph_payload(precision_viz)
+    @test precision_payload["nodes"][1]["x"] == 0.333313
+    @test precision_payload["nodes"][1]["y"] == 0.666687
+    @test precision_payload["nodes"][1]["weight"] == 0.333333
+    @test precision_payload["nodes"][1]["nested"]["score"] == 0.666667
+    @test precision_payload["edges"][1]["size"] == 0.333333
+    @test precision_payload["edges"][1]["strength"] == 0.666667
+    @test precision_payload["config"]["cameraRatio"] == 0.333333
+    @test precision_payload["config"]["labelDensity"] == 0.666667
 
     escaped_viz = render(
         [(id="unsafe\"id", x=0.0, y=0.0, label="</script><script>alert(1)</script>")],

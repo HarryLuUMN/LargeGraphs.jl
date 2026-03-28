@@ -28,13 +28,13 @@ end
 
 function _graph_payload(value::SigmaGraph)
     coordinate_step = _coordinate_quantization_step(value.nodes)
-    (
+    _trim_payload_numbers((
         id=value.id,
         nodes=[_node_payload(node; coordinate_step=coordinate_step) for node in value.nodes],
         edges=[_edge_payload(edge) for edge in value.edges],
         config=_config_payload(value.config),
         interaction=value.interaction,
-    )
+    ))
 end
 
 function _node_payload(node::NodeSpec; coordinate_step::Float64)
@@ -91,6 +91,22 @@ function _coordinate_quantization_step(nodes)
 end
 
 _quantize_coordinate(value::Real, step::Float64) = step <= 0 ? Float64(value) : round(Float64(value) / step) * step
+
+function _trim_payload_numbers(value)
+    value isa AbstractDict && return Dict{String, Any}(string(key) => _trim_payload_numbers(entry) for (key, entry) in pairs(value))
+    value isa NamedTuple && return Dict{String, Any}(string(key) => _trim_payload_numbers(entry) for (key, entry) in pairs(value))
+    value isa AbstractVector && return [_trim_payload_numbers(entry) for entry in value]
+    value isa AbstractFloat && return _trim_float(value)
+    value isa Real && return value
+    value
+end
+
+function _trim_float(value::AbstractFloat)
+    isfinite(value) || return value
+    rounded = round(Float64(value); digits=6)
+    abs(rounded) < 5.0e-7 && return 0.0
+    rounded
+end
 
 function _html(value::SigmaGraph; runtime=:sigma)
     graph_id = _escape_html_attribute(value.id)
