@@ -9,7 +9,7 @@ does not fetch Sigma.js from a CDN.
 """
 function savehtml(path::AbstractString, value::SigmaGraph; self_contained=true, runtime=:auto)
     open(path, "w") do io
-        write(io, _standalone_html(value; self_contained=self_contained, runtime=runtime))
+        _write_standalone_html(io, value; self_contained=self_contained, runtime=runtime)
     end
     path
 end
@@ -19,7 +19,7 @@ function savehtml(path::AbstractString, nodes, edges; self_contained=true, runti
 end
 
 function Base.show(io::IO, ::MIME"text/html", value::SigmaGraph)
-    print(io, _html(value))
+    _write_html(io, value)
 end
 
 function Base.show(io::IO, ::MIME"text/plain", value::SigmaGraph)
@@ -28,55 +28,50 @@ end
 
 function _graph_payload(value::SigmaGraph)
     coordinate_step = _coordinate_quantization_step(value.nodes)
-    _trim_payload_numbers((
-        id=value.id,
-        nodes=[_node_payload(node; coordinate_step=coordinate_step) for node in value.nodes],
-        edges=[_edge_payload(edge) for edge in value.edges],
-        config=_config_payload(value.config),
-        interaction=value.interaction,
-    ))
+    Dict{String, Any}(
+        "id" => value.id,
+        "nodes" => [_node_payload(node; coordinate_step=coordinate_step) for node in value.nodes],
+        "edges" => [_edge_payload(edge) for edge in value.edges],
+        "config" => _config_payload(value.config),
+        "interaction" => _trim_payload_value(value.interaction),
+    )
 end
 
 function _node_payload(node::NodeSpec; coordinate_step::Float64)
-    merge(
-        Dict{String, Any}(
-            "id" => node.id,
-            "x" => _quantize_coordinate(node.x, coordinate_step),
-            "y" => _quantize_coordinate(node.y, coordinate_step),
-        ),
-        _defaulted_payload_pair("size", node.size, 1.0),
-        isnothing(node.label) ? Dict{String, Any}() : Dict("label" => node.label),
-        isnothing(node.color) ? Dict{String, Any}() : Dict("color" => node.color),
-        node.attributes,
-    )
+    payload = Dict{String, Any}()
+    payload["id"] = node.id
+    payload["x"] = _trim_float(_quantize_coordinate(node.x, coordinate_step))
+    payload["y"] = _trim_float(_quantize_coordinate(node.y, coordinate_step))
+    node.size != 1.0 && (payload["size"] = _trim_payload_value(node.size))
+    !isnothing(node.label) && (payload["label"] = node.label)
+    !isnothing(node.color) && (payload["color"] = node.color)
+    _append_payload_attributes!(payload, node.attributes)
+    payload
 end
 
 function _edge_payload(edge::EdgeSpec)
-    merge(
-        Dict{String, Any}(
-            "key" => edge.id,
-            "source" => edge.source,
-            "target" => edge.target,
-        ),
-        _defaulted_payload_pair("size", edge.size, 1.0),
-        isnothing(edge.label) ? Dict{String, Any}() : Dict("label" => edge.label),
-        isnothing(edge.color) ? Dict{String, Any}() : Dict("color" => edge.color),
-        edge.attributes,
-    )
+    payload = Dict{String, Any}()
+    payload["key"] = edge.id
+    payload["source"] = edge.source
+    payload["target"] = edge.target
+    edge.size != 1.0 && (payload["size"] = _trim_payload_value(edge.size))
+    !isnothing(edge.label) && (payload["label"] = edge.label)
+    !isnothing(edge.color) && (payload["color"] = edge.color)
+    _append_payload_attributes!(payload, edge.attributes)
+    payload
 end
 
 function _config_payload(config::SigmaConfig)
-    merge(
-        Dict{String, Any}(),
-        _defaulted_payload_pair("background", config.background, "#ffffff"),
-        _defaulted_payload_pair("cameraRatio", config.camera_ratio, 1.0),
-        _defaulted_payload_pair("renderEdgeLabels", config.render_edge_labels, false),
-        _defaulted_payload_pair("hideEdgesOnMove", config.hide_edges_on_move, false),
-        _defaulted_payload_pair("labelDensity", config.label_density, 1.0),
-        _defaulted_payload_pair("labelGridCellSize", config.label_grid_cell_size, 80),
-        _defaulted_payload_pair("maxNodeSize", config.max_node_size, 16.0),
-        _defaulted_payload_pair("minNodeSize", config.min_node_size, 2.0),
-    )
+    payload = Dict{String, Any}()
+    config.background != "#ffffff" && (payload["background"] = config.background)
+    config.camera_ratio != 1.0 && (payload["cameraRatio"] = _trim_payload_value(config.camera_ratio))
+    config.render_edge_labels != false && (payload["renderEdgeLabels"] = config.render_edge_labels)
+    config.hide_edges_on_move != false && (payload["hideEdgesOnMove"] = config.hide_edges_on_move)
+    config.label_density != 1.0 && (payload["labelDensity"] = _trim_payload_value(config.label_density))
+    config.label_grid_cell_size != 80 && (payload["labelGridCellSize"] = config.label_grid_cell_size)
+    config.max_node_size != 16.0 && (payload["maxNodeSize"] = _trim_payload_value(config.max_node_size))
+    config.min_node_size != 2.0 && (payload["minNodeSize"] = _trim_payload_value(config.min_node_size))
+    payload
 end
 
 function _coordinate_quantization_step(nodes)
@@ -91,10 +86,17 @@ end
 
 _quantize_coordinate(value::Real, step::Float64) = step <= 0 ? Float64(value) : round(Float64(value) / step) * step
 
-function _trim_payload_numbers(value)
-    value isa AbstractDict && return Dict{String, Any}(string(key) => _trim_payload_numbers(entry) for (key, entry) in pairs(value))
-    value isa NamedTuple && return Dict{String, Any}(string(key) => _trim_payload_numbers(entry) for (key, entry) in pairs(value))
-    value isa AbstractVector && return [_trim_payload_numbers(entry) for entry in value]
+function _append_payload_attributes!(payload::Dict{String, Any}, attributes)
+    for (key, entry) in pairs(attributes)
+        payload[string(key)] = _trim_payload_value(entry)
+    end
+    payload
+end
+
+function _trim_payload_value(value)
+    value isa AbstractDict && return Dict{String, Any}(string(key) => _trim_payload_value(entry) for (key, entry) in pairs(value))
+    value isa NamedTuple && return Dict{String, Any}(string(key) => _trim_payload_value(entry) for (key, entry) in pairs(value))
+    value isa AbstractVector && return [_trim_payload_value(entry) for entry in value]
     value isa AbstractFloat && return _trim_float(value)
     value isa Real && return value
     value
@@ -107,16 +109,12 @@ function _trim_float(value::AbstractFloat)
     rounded
 end
 
-function _defaulted_payload_pair(key::String, value, default)
-    value == default ? Dict{String, Any}() : Dict{String, Any}(key => value)
-end
-
-function _html(value::SigmaGraph; runtime=:sigma)
+function _write_html(io::IO, value::SigmaGraph; runtime=:sigma)
     graph_id = _escape_html_attribute(value.id)
     payload_id = _escape_html_attribute("$(value.id)-payload")
     payload = _escape_script_data(JSON3.write(_graph_payload(value)))
     bootstrap, invocation = _runtime_bootstrap(runtime, value.id)
-    """
+    print(io, """
     <div id="$(graph_id)" class="large-graphs-jl-root" style="width: $(_escape_html_attribute(value.config.width));">
       <div class="large-graphs-jl-stage" style="width: 100%; height: $(_escape_html_attribute(value.config.height)); background: $(_escape_html_attribute(value.config.background));"></div>
     </div>
@@ -125,12 +123,12 @@ function _html(value::SigmaGraph; runtime=:sigma)
     $(bootstrap)
     $(invocation)
     </script>
-    """
+    """)
 end
 
-function _standalone_html(value::SigmaGraph; self_contained=true, runtime=:auto)
+function _write_standalone_html(io::IO, value::SigmaGraph; self_contained=true, runtime=:auto)
     resolved_runtime = _resolve_export_runtime(runtime; self_contained=self_contained)
-    """
+    print(io, """
     <!doctype html>
     <html>
     <head>
@@ -139,24 +137,35 @@ function _standalone_html(value::SigmaGraph; self_contained=true, runtime=:auto)
       <title>LargeGraphs Demo</title>
     </head>
     <body>
-    $(_html(value; runtime=resolved_runtime))
+    """)
+    _write_html(io, value; runtime=resolved_runtime)
+    print(io, """
     </body>
     </html>
-    """
+    """)
 end
 
 _resolve_export_runtime(runtime::Symbol; self_contained::Bool) = runtime === :auto ? (self_contained ? :offline_canvas : :sigma) : runtime
 
+const _RUNTIME_ASSETS = Dict{Symbol, String}()
+
 function _runtime_bootstrap(runtime::Symbol, id::String)
     runtime === :sigma && return (
-        read(joinpath(pkgdir(@__MODULE__), "assets", "sigma-viewer.js"), String),
+        _runtime_asset(:sigma),
         "void window.LargeGraphs.render(\"$(_escape_javascript_string(id))\");",
     )
     runtime === :offline_canvas && return (
-        read(joinpath(pkgdir(@__MODULE__), "assets", "offline-viewer.js"), String),
+        _runtime_asset(:offline_canvas),
         "void window.LargeGraphsOffline.render(\"$(_escape_javascript_string(id))\");",
     )
     error("Unsupported HTML runtime: $(runtime)")
+end
+
+function _runtime_asset(runtime::Symbol)
+    get!(_RUNTIME_ASSETS, runtime) do
+        filename = runtime === :sigma ? "sigma-viewer.js" : runtime === :offline_canvas ? "offline-viewer.js" : error("Unsupported HTML runtime: $(runtime)")
+        read(joinpath(pkgdir(@__MODULE__), "assets", filename), String)
+    end
 end
 
 function _escape_html_attribute(value)
