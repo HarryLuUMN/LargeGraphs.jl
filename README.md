@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="image/logo.png" width="520" alt="LargeGraphs.jl logo">
+  <img src="new_logo.png" width="520" alt="LargeGraphs.jl logo">
 </p>
 
 # LargeGraphs
