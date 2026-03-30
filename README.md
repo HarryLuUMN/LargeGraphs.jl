@@ -4,7 +4,7 @@
 
 # LargeGraphs
 
-`LargeGraphs` is a small Julia package for rendering interactive graph
+`LargeGraphs` is a lightweight Julia package for rendering interactive graph
 visualizations with [Sigma.js](https://www.sigmajs.org/) in IJulia and Jupyter
 notebooks. It accepts plain Julia collections, includes a lightweight batch of
 classic layout algorithms, accepts `Graphs.jl` graph objects, produces
