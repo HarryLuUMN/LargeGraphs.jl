@@ -59,16 +59,29 @@ end
     SigmaGraph
 
 Normalized graph object used by `LargeGraphs` for HTML rendering and export.
+The `runtime` field stores the requested browser runtime (`:auto`, `:sigma`,
+`:webgpu`, or `:offline_canvas`).
 """
 struct SigmaGraph
     id::String
     nodes::Vector{NodeSpec}
     edges::Vector{EdgeSpec}
     config::SigmaConfig
+    runtime::Symbol
     interaction::Dict{String, Any}
 end
 
-SigmaGraph(id, nodes, edges, config) = SigmaGraph(string(id), nodes, edges, config, Dict{String, Any}())
+SigmaGraph(id, nodes, edges, config) = SigmaGraph(string(id), nodes, edges, config, :auto, Dict{String, Any}())
+SigmaGraph(id, nodes, edges, config, interaction::Dict{String, Any}) = SigmaGraph(string(id), nodes, edges, config, :auto, interaction)
+
+const _RUNTIME_OPTIONS = (:auto, :sigma, :webgpu, :offline_canvas)
+
+function _normalize_runtime(runtime)
+    normalized = runtime isa Symbol ? runtime : Symbol(lowercase(string(runtime)))
+    normalized in _RUNTIME_OPTIONS && return normalized
+    supported = join(string.(collect(_RUNTIME_OPTIONS)), ", ")
+    throw(ArgumentError("Unknown runtime: $(repr(runtime)). Supported runtimes: $(supported)."))
+end
 
 const _SIGMA_PROFILES = Dict{Symbol, NamedTuple{(:camera_ratio, :render_edge_labels, :hide_edges_on_move, :label_density, :label_grid_cell_size, :max_node_size, :min_node_size), Tuple{Float64, Bool, Bool, Float64, Int, Float64, Float64}}}(
     :default => (

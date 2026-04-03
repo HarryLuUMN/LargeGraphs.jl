@@ -36,6 +36,7 @@ If you want the shortest route to something visible in a notebook, use
 
 - keep the staged pipeline obvious and easy to adopt
 - keep the fast `NetworkLayout.jl`-backed defaults stable
+- keep the experimental `runtime=:webgpu` path aligned with the main notebook and export workflows
 - validate the main notebook and export workflows with representative examples
 - collect feedback from initial users before adding many more surface-level features
 
@@ -46,6 +47,7 @@ If you are evaluating the package today, expect:
 - active iteration on defaults and docs
 - good results on the documented example paths
 - some rough edges outside the main workflows
+- an experimental WebGPU/WebGL runtime that is opt-in rather than the default recommendation
 - continued refinement of performance, especially around layout choices and benchmark coverage
 
 ## Why Try It Now

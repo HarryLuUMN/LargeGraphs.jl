@@ -4,6 +4,7 @@ examples/demo_notebook.executed.ipynb
 .julia_depot/
 docs/build/
 docs/Manifest.toml
+node_modules/
 benchmarks/results/artifacts/*
 !benchmarks/results/raw/*.json
 !benchmarks/results/raw/.gitkeep

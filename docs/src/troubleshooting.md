@@ -16,6 +16,19 @@ for JavaScript errors and failed network requests.
 Standalone HTML export still loads Sigma.js and Graphology from a CDN. Offline
 viewing or restrictive network policies can prevent the graph from rendering.
 
+If you need a self-contained GPU-oriented export path, try
+`runtime=:webgpu`. The bundled WebGPU runtime does not depend on the PixiJS CDN.
+
+## WebGPU runtime falls back or fails
+
+`runtime=:webgpu` is experimental.
+
+- On browsers without WebGPU, the runtime should fall back to WebGL automatically.
+- If renderer initialization still fails, LargeGraphs falls back to the offline
+  canvas export path and shows the error details in the stage.
+- Open the browser developer console first when you need to confirm whether the
+  browser exposed WebGPU and whether PixiJS selected WebGPU or WebGL.
+
 ## Graph quality issues
 
 Try one of the built-in layouts first:

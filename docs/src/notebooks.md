@@ -49,6 +49,19 @@ positioned_nodes = grid_layout(nodes; columns=4, spacing=1.2)
 viz = render(positioned_nodes, edges; height="600px")
 ```
 
+To try the experimental WebGPU/WebGL runtime, opt in explicitly:
+
+```julia
+viz = render(
+    nodes,
+    edges;
+    layout=:force_directed,
+    algorithm=:sfdp,
+    runtime=:webgpu,
+    height="600px",
+)
+```
+
 ## Interaction State
 
 For notebook exploration, you can capture click and hover state back into Julia:
@@ -94,6 +107,7 @@ For a workflow-oriented overview of the repository examples, see `examples/READM
 - `examples/demo_layout_functions.ipynb` shows direct layout functions returning positioned nodes.
 - `examples/demo_graphsjl.ipynb` shows the `Graphs.jl` input workflow.
 - `examples/demo_interactions.ipynb` shows the notebook interaction workflow.
+- `examples/demo_webgpu_runtime.ipynb` shows the experimental `runtime=:webgpu` workflow.
 - `examples/demo_large_graph.jl` generates the same style of output from a script and writes HTML to disk.
 
 ## Practical Advice
@@ -101,4 +115,5 @@ For a workflow-oriented overview of the repository examples, see `examples/READM
 - Keep labels sparse for large graphs.
 - Use `profile=:dense` or `profile=:large` when panning feels sluggish or labels become cluttered.
 - Use `:random`, `:circular`, `:grid`, `:spectral`, or `:tree` for cheaper layout options when the graph structure fits; for a natural-looking default, prefer `layout=:force_directed, algorithm=:sfdp`.
+- Treat `runtime=:webgpu` as an experimental opt-in path; keep `:sigma` or `:auto` as the default baseline when you want the most established notebook behavior.
 - Save a standalone HTML copy when you need to share results with someone outside Julia.

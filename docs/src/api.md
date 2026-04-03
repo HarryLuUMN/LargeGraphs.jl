@@ -89,6 +89,7 @@ Built-in profiles:
 
 Normalized package object containing graph data and rendering configuration. This
 is the object displayed by notebooks and accepted by `savehtml`.
+The stored runtime is one of `:auto`, `:sigma`, `:webgpu`, or `:offline_canvas`.
 
 ### `GraphEvent`
 
@@ -153,6 +154,7 @@ return any supported node or edge input form.
 Both `graph` methods also accept:
 
 - `profile`
+- `runtime`
 - `interaction_state`
 - `enable_selection`
 - `enable_tooltips`
@@ -171,6 +173,18 @@ pass-through for code paths that already hold a normalized graph.
 
 When `interaction_state` is provided, notebook interactions update that state
 in Julia if the graph is displayed through IJulia.
+
+`runtime` accepts:
+
+- `:auto`
+- `:sigma`
+- `:webgpu`
+- `:offline_canvas`
+
+`runtime=:webgpu` selects the experimental PixiJS-backed browser runtime. It
+prefers WebGPU when the browser supports it, falls back to WebGL when needed,
+and still falls back to the offline canvas export path if renderer
+initialization fails entirely.
 
 ### Interaction helpers
 

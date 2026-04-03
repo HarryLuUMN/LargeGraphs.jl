@@ -177,6 +177,8 @@ The repository includes:
 - `examples/demo_notebook.ipynb` for the general notebook path.
 - `examples/demo_networklayout_layouts.ipynb` for the current fast default layout path.
 - `examples/demo_graphsjl.ipynb` for direct `Graphs.jl` rendering.
+- `examples/demo_webgpu_runtime.ipynb` for the experimental WebGPU/WebGL runtime path.
+- `examples/demo_gallery_build.ipynb` for the standalone gallery build workflow.
 - `examples/demo_layout_functions.ipynb` for direct layout function comparison.
 - `examples/demo_interactions.ipynb` for click/hover interaction and Julia-side state updates.
 - `examples/demo_large_graph.jl` for script-based standalone export.
@@ -267,12 +269,12 @@ Current status:
 - `graph(nodes, edges; id, config, layout=nothing, layout_kwargs...)` normalizes graph data into a `SigmaGraph`.
 - `graph(g::Graphs.AbstractGraph; id, config, layout=nothing, node_mapper, edge_mapper, layout_kwargs...)` normalizes a `Graphs.jl` graph into a `SigmaGraph`.
 - `layout_graph(nodes, edges; layout=nothing, layout_kwargs...)` runs the layout stage and returns positioned nodes with normalized edges.
-- `assemble_graph(layouted_or_nodes, edges=nothing; id, config, interaction_state, ...)` builds a `SigmaGraph` from already-positioned graph data.
-- `render(nodes, edges; layout=nothing, kwargs..., layout_kwargs...)` builds a `SigmaGraph` with inline render options.
-- `render(g::Graphs.AbstractGraph; layout=nothing, node_mapper, edge_mapper, kwargs..., layout_kwargs...)` renders a `Graphs.jl` graph directly.
+- `assemble_graph(layouted_or_nodes, edges=nothing; id, config, runtime=:auto, interaction_state, ...)` builds a `SigmaGraph` from already-positioned graph data.
+- `render(nodes, edges; layout=nothing, runtime=:auto, kwargs..., layout_kwargs...)` builds a `SigmaGraph` with inline render options.
+- `render(g::Graphs.AbstractGraph; layout=nothing, node_mapper, edge_mapper, runtime=:auto, kwargs..., layout_kwargs...)` renders a `Graphs.jl` graph directly.
 - `InteractionState()` records click and hover events back into Julia when the graph is displayed in IJulia.
-- `savehtml(path, graph)` writes a standalone HTML file.
-- `savehtml(path, nodes, edges; kwargs...)` combines rendering and export in one call.
+- `savehtml(path, graph; runtime=:auto)` writes a standalone HTML file.
+- `savehtml(path, nodes, edges; runtime=:auto, kwargs...)` combines rendering and export in one call.
 - `random_layout(nodes; seed, extent)` assigns random coordinates.
 - `circular_layout(nodes; radius, start_angle)` places nodes on a circle.
 - `grid_layout(nodes; columns, spacing)` places nodes on a centered grid.
@@ -369,6 +371,40 @@ Explicit keyword arguments still override the profile defaults. For example:
 viz = render(nodes, edges; profile=:large, label_density=0.8)
 ```
 
+## Experimental WebGPU Runtime
+
+`LargeGraphs` now includes an experimental browser runtime selected with
+`runtime=:webgpu`.
+
+Use it when you want:
+
+- an opt-in GPU renderer that prefers WebGPU and falls back to WebGL in the browser
+- the same Julia-side graph, layout, and interaction APIs as the default notebook path
+- self-contained HTML export without relying on PixiJS CDNs
+
+Typical usage:
+
+```julia
+viz = render(
+    nodes,
+    edges;
+    layout=:force_directed,
+    algorithm=:sfdp,
+    runtime=:webgpu,
+    height="560px",
+)
+
+display(viz)
+savehtml("graph-webgpu.html", viz)
+```
+
+Current status:
+
+- experimental and opt-in only
+- targeted at the main notebook and standalone HTML workflows
+- keeps the current Sigma.js runtime as the default and recommended baseline
+- optimized first for correctness and workflow compatibility rather than the largest possible graphs
+
 ### Accepted input forms
 
 Nodes can be provided as:
@@ -427,6 +463,13 @@ interaction_events(state)
 
 Julia-side event updates require `IJulia` and are intended for notebook use.
 The browser-side tooltip, selection, and highlight behavior still works in exported HTML.
+
+Runtime choices:
+
+- `runtime=:auto` keeps the existing default notebook/export behavior
+- `runtime=:sigma` forces the Sigma.js browser runtime
+- `runtime=:webgpu` requests the experimental PixiJS-backed runtime that prefers WebGPU and falls back to WebGL
+- `runtime=:offline_canvas` forces the lightweight offline canvas export runtime
 
 ## Examples
 
@@ -530,14 +573,10 @@ Source pages:
 ## Repository Layout
 
 - `src/LargeGraphs.jl`: package source and public API.
-- `assets/sigma-viewer.js`: browser bootstrap for Sigma.js rendering.
+- `assets/sigma-viewer.js`: browser bootstrap for the default Sigma.js runtime.
+- `assets/runtime-core.js`: shared browser runtime shell for Sigma.js and WebGPU rendering.
+- `assets/webgpu-viewer.js`: bundled experimental WebGPU/WebGL runtime.
 - `examples/demo_notebook.ipynb`: notebook demo.
+- `examples/demo_webgpu_runtime.ipynb`: experimental WebGPU runtime demo.
 - `examples/demo_large_graph.jl`: script demo with standalone export.
-- `test/runtests.jl`: package tests.
-_large_graph.jl`: script demo with standalone export.
-- `test/runtests.jl`: package tests.
-tebook.ipynb`: notebook demo.
-- `examples/demo_large_graph.jl`: script demo with standalone export.
-- `test/runtests.jl`: package tests.
-_large_graph.jl`: script demo with standalone export.
 - `test/runtests.jl`: package tests.

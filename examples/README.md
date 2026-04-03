@@ -51,6 +51,21 @@ It focuses on:
 - selected neighbors
 - interaction event capture
 
+### `demo_webgpu_runtime.ipynb`
+Use this when you want to try the experimental `runtime=:webgpu` path.
+
+It focuses on:
+- opt-in WebGPU/WebGL rendering
+- the same notebook interaction workflow with a different browser runtime
+- self-contained HTML export for the WebGPU path
+
+### `demo_gallery_build.ipynb`
+Use this when you want to rebuild the standalone gallery from a notebook-shaped workflow.
+
+It focuses on:
+- calling the gallery build script
+- locating `gallery/build/`
+- understanding how the showcase output differs from tutorial examples
 ### `demo_large_graph.jl`
 Use this for script-driven standalone export outside a notebook.
 
@@ -82,6 +97,10 @@ Start with:
 ### I care about notebook interactivity
 Start with:
 - `demo_interactions.ipynb`
+
+### I want to try the experimental GPU browser runtime
+Start with:
+- `demo_webgpu_runtime.ipynb`
 
 ### I want standalone HTML output from a script
 Start with:

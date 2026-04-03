@@ -1,0 +1,15 @@
+{
+  "name": "large-graphs-jl-webgpu",
+  "private": true,
+  "scripts": {
+    "build:webgpu": "esbuild webgpu/webgpu-viewer.ts --bundle --platform=browser --format=iife --target=es2020 --outfile=assets/webgpu-viewer.js",
+    "typecheck:webgpu": "tsc --noEmit"
+  },
+  "dependencies": {
+    "pixi.js": "^8.13.1"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.2",
+    "typescript": "^5.8.3"
+  }
+}

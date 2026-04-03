@@ -30,13 +30,15 @@ end
     assemble_graph(layouted; id="sigma-...", config=SigmaConfig(), interaction_state=nothing, ...)
 
 Build a `SigmaGraph` from already-normalized or already-laid-out graph data
-without running a layout step.
+without running a layout step. Use `runtime=:webgpu` to opt into the
+experimental PixiJS-backed browser renderer.
 """
 function assemble_graph(
     nodes,
     edges;
     id=string("sigma-", uuid4()),
     config=SigmaConfig(),
+    runtime=:auto,
     profile=:default,
     interaction_state=nothing,
     enable_selection=true,
@@ -59,6 +61,7 @@ function assemble_graph(
         normalized_nodes,
         normalized_edges,
         resolved_config,
+        _normalize_runtime(runtime),
         _interaction_payload(
             interaction_state;
             enable_selection=enable_selection,
@@ -72,6 +75,7 @@ function assemble_graph(
     layouted::NamedTuple;
     id=string("sigma-", uuid4()),
     config=SigmaConfig(),
+    runtime=:auto,
     profile=:default,
     interaction_state=nothing,
     enable_selection=true,
@@ -84,6 +88,7 @@ function assemble_graph(
         layouted.edges;
         id=id,
         config=config,
+        runtime=runtime,
         profile=profile,
         interaction_state=interaction_state,
         enable_selection=enable_selection,
@@ -100,13 +105,15 @@ Build a normalized `SigmaGraph` from node and edge collections.
 Accepted node inputs include `NodeSpec`, named tuples, dictionaries, and tuples
 of the form `(id, x, y, size=1.0, label=nothing)`. Accepted edge inputs include
 `EdgeSpec`, named tuples, dictionaries, and tuples of the form
-`(source, target, size=1.0, label=nothing)`.
+`(source, target, size=1.0, label=nothing)`. Use `runtime=:webgpu` to request
+the experimental WebGPU/WebGL browser runtime.
 """
 function graph(
     nodes,
     edges;
     id=string("sigma-", uuid4()),
     config=SigmaConfig(),
+    runtime=:auto,
     profile=:default,
     layout=nothing,
     interaction_state=nothing,
@@ -120,6 +127,7 @@ function graph(
         layouted;
         id=id,
         config=config,
+        runtime=runtime,
         profile=profile,
         interaction_state=interaction_state,
         enable_selection=enable_selection,
@@ -180,6 +188,7 @@ function graph(
     g::Graphs.AbstractGraph;
     id=string("sigma-", uuid4()),
     config=SigmaConfig(),
+    runtime=:auto,
     profile=:default,
     layout=nothing,
     interaction_state=nothing,
@@ -201,6 +210,7 @@ function graph(
         layouted;
         id=id,
         config=config,
+        runtime=runtime,
         profile=profile,
         interaction_state=interaction_state,
         enable_selection=enable_selection,
@@ -214,13 +224,15 @@ end
 
 Create a `SigmaGraph` with inline rendering configuration.
 
-This is the main convenience entry point for notebook display.
+This is the main convenience entry point for notebook display. Use
+`runtime=:webgpu` to opt into the experimental PixiJS-backed browser runtime.
 """
 function render(
     nodes,
     edges;
     id=string("sigma-", uuid4()),
     layout=nothing,
+    runtime=:auto,
     profile=:default,
     width=nothing,
     height=nothing,
@@ -258,6 +270,7 @@ function render(
         layouted;
         id=id,
         config=config,
+        runtime=runtime,
         interaction_state=interaction_state,
         enable_selection=enable_selection,
         enable_tooltips=enable_tooltips,
@@ -276,6 +289,7 @@ function render(
     layout=nothing,
     node_mapper=vertex -> (id=string(vertex),),
     edge_mapper=edge -> (source=string(Graphs.src(edge)), target=string(Graphs.dst(edge))),
+    runtime=:auto,
     profile=:default,
     width=nothing,
     height=nothing,
@@ -319,6 +333,7 @@ function render(
         layouted;
         id=id,
         config=config,
+        runtime=runtime,
         interaction_state=interaction_state,
         enable_selection=enable_selection,
         enable_tooltips=enable_tooltips,

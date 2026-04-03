@@ -45,6 +45,7 @@ using Graphs
     @test render(viz) === viz
     @test length(viz.nodes) == 2
     @test length(viz.edges) == 1
+    @test viz.runtime === :auto
 
     dense_config = SigmaConfig(profile=:dense)
     @test dense_config.hide_edges_on_move == true
@@ -465,29 +466,32 @@ using Graphs
     @test occursin("large-graphs-jl-root", html)
     @test occursin("window.LargeGraphs.render", html)
     @test occursin("void window.LargeGraphs.render", html)
-    @test occursin("Loading Sigma.js", read(joinpath(pkgdir(LargeGraphs), "assets", "sigma-viewer.js"), String))
-    @test occursin("root.__largeGraphsJlRenderToken", read(joinpath(pkgdir(LargeGraphs), "assets", "sigma-viewer.js"), String))
-    @test occursin("root.__largeGraphsJlSigma.kill()", read(joinpath(pkgdir(LargeGraphs), "assets", "sigma-viewer.js"), String))
-    @test occursin("defaultMaxActiveViews = 4", read(joinpath(pkgdir(LargeGraphs), "assets", "sigma-viewer.js"), String))
-    @test occursin("Graph paused to keep the notebook responsive", read(joinpath(pkgdir(LargeGraphs), "assets", "sigma-viewer.js"), String))
-    @test occursin("window.LargeGraphsMaxActiveViews", read(joinpath(pkgdir(LargeGraphs), "assets", "sigma-viewer.js"), String))
-    @test occursin("Paused Preview", read(joinpath(pkgdir(LargeGraphs), "assets", "sigma-viewer.js"), String))
-    @test occursin("Reactivate graph", read(joinpath(pkgdir(LargeGraphs), "assets", "sigma-viewer.js"), String))
-    @test occursin("drawFallbackPreview", read(joinpath(pkgdir(LargeGraphs), "assets", "sigma-viewer.js"), String))
-    @test occursin("normalizePayload", read(joinpath(pkgdir(LargeGraphs), "assets", "sigma-viewer.js"), String))
-    @test occursin("Object.assign({ size: 1 }, node)", read(joinpath(pkgdir(LargeGraphs), "assets", "sigma-viewer.js"), String))
-    @test occursin("createPreview(root, stage)", read(joinpath(pkgdir(LargeGraphs), "assets", "sigma-viewer.js"), String))
-    @test occursin("aria-label\", \"Fit view\"", read(joinpath(pkgdir(LargeGraphs), "assets", "sigma-viewer.js"), String))
-    @test occursin("Lock camera", read(joinpath(pkgdir(LargeGraphs), "assets", "sigma-viewer.js"), String))
-    @test occursin("Unlock camera", read(joinpath(pkgdir(LargeGraphs), "assets", "sigma-viewer.js"), String))
-    @test occursin("toggleCameraLock", read(joinpath(pkgdir(LargeGraphs), "assets", "sigma-viewer.js"), String))
-    @test occursin("camera.animate", read(joinpath(pkgdir(LargeGraphs), "assets", "sigma-viewer.js"), String))
-    @test occursin("setCustomBBox", read(joinpath(pkgdir(LargeGraphs), "assets", "sigma-viewer.js"), String))
-    @test occursin("ratio: 1", read(joinpath(pkgdir(LargeGraphs), "assets", "sigma-viewer.js"), String))
-    @test occursin("new_comm", read(joinpath(pkgdir(LargeGraphs), "assets", "sigma-viewer.js"), String))
-    @test occursin("largegraphs:interaction", read(joinpath(pkgdir(LargeGraphs), "assets", "sigma-viewer.js"), String))
-    @test occursin("enterNode", read(joinpath(pkgdir(LargeGraphs), "assets", "sigma-viewer.js"), String))
-    @test occursin("clickNode", read(joinpath(pkgdir(LargeGraphs), "assets", "sigma-viewer.js"), String))
+    runtime_core = read(joinpath(pkgdir(LargeGraphs), "assets", "runtime-core.js"), String)
+    sigma_viewer = read(joinpath(pkgdir(LargeGraphs), "assets", "sigma-viewer.js"), String)
+    webgpu_viewer = read(joinpath(pkgdir(LargeGraphs), "assets", "webgpu-viewer.js"), String)
+    @test occursin("Loading Sigma.js", sigma_viewer)
+    @test occursin("root.__largeGraphsJlRenderToken", runtime_core)
+    @test occursin("sigma.kill()", sigma_viewer)
+    @test occursin("defaultMaxActiveViews = 4", runtime_core)
+    @test occursin("Graph paused to keep the notebook responsive", runtime_core)
+    @test occursin("window.LargeGraphsMaxActiveViews", runtime_core)
+    @test occursin("Paused Preview", runtime_core)
+    @test occursin("Reactivate graph", runtime_core)
+    @test occursin("drawFallbackPreview", runtime_core)
+    @test occursin("createPreview(root, stage)", runtime_core)
+    @test occursin("aria-label\", \"Fit view\"", runtime_core)
+    @test occursin("Lock camera", runtime_core)
+    @test occursin("Unlock camera", runtime_core)
+    @test occursin("toggleCameraLock", runtime_core)
+    @test occursin("new_comm", runtime_core)
+    @test occursin("largegraphs:interaction", runtime_core)
+    @test occursin("camera.animate", sigma_viewer)
+    @test occursin("setCustomBBox", sigma_viewer)
+    @test occursin("ratio: 1", sigma_viewer)
+    @test occursin("enterNode", sigma_viewer)
+    @test occursin("clickNode", sigma_viewer)
+    @test occursin("Loading WebGPU renderer", webgpu_viewer)
+    @test occursin("preference: \"webgpu\"", webgpu_viewer)
     @test occursin("enableTooltips", html)
     @test occursin("highlightNeighbors", html)
 
@@ -521,9 +525,24 @@ using Graphs
     @test !occursin("</script><script>alert(1)</script>", escaped_html)
     @test occursin("""window.LargeGraphs.render("unsafe\\\"id")""", escaped_html)
 
+    webgpu_viz = render(positioned_nodes, [(source="a", target="b", color="#94a3b8")]; runtime=:webgpu)
+    @test webgpu_viz.runtime === :webgpu
+    webgpu_html = sprint(show, MIME"text/html"(), webgpu_viz)
+    @test occursin("window.LargeGraphsWebGPU.render", webgpu_html)
+    @test occursin("window.LargeGraphsRuntimeCore", webgpu_html)
+
+    sigma_viz = render(positioned_nodes, [(source="a", target="b", color="#94a3b8")]; runtime=:sigma)
+    @test sigma_viz.runtime === :sigma
+    sigma_html = sprint(show, MIME"text/html"(), sigma_viz)
+    @test occursin("window.LargeGraphs.render", sigma_html)
+    @test occursin("window.LargeGraphsRuntimeCore", sigma_html)
+
+    default_export_viz = render(positioned_nodes, [(source="a", target="b", color="#94a3b8")])
+    @test default_export_viz.runtime === :auto
+
     tempdir = mktempdir()
     output = joinpath(tempdir, "graph.html")
-    savehtml(output, positioned_nodes, [(source="a", target="b", color="#94a3b8")]; height="480px")
+    savehtml(output, default_export_viz; self_contained=true)
     exported = read(output, String)
     @test occursin("<!doctype html>", exported)
     @test occursin("large-graphs-jl-root", exported)
@@ -536,4 +555,22 @@ using Graphs
     exported_sigma = read(output_sigma, String)
     @test occursin("window.LargeGraphs.render", exported_sigma)
     @test occursin("cdn.jsdelivr.net", exported_sigma)
+
+    output_explicit_sigma = joinpath(tempdir, "graph-explicit-sigma.html")
+    savehtml(output_explicit_sigma, sigma_viz; self_contained=true)
+    exported_explicit_sigma = read(output_explicit_sigma, String)
+    @test occursin("window.LargeGraphs.render", exported_explicit_sigma)
+    @test occursin("cdn.jsdelivr.net", exported_explicit_sigma)
+
+    output_webgpu = joinpath(tempdir, "graph-webgpu.html")
+    savehtml(output_webgpu, webgpu_viz; self_contained=true)
+    exported_webgpu = read(output_webgpu, String)
+    @test occursin("window.LargeGraphsWebGPU.render", exported_webgpu)
+    @test !occursin("cdn.jsdelivr.net/npm/pixi.js", exported_webgpu)
+
+    output_explicit_webgpu = joinpath(tempdir, "graph-explicit-webgpu.html")
+    savehtml(output_explicit_webgpu, positioned_nodes, [(source="a", target="b", color="#94a3b8")]; runtime=:webgpu, self_contained=false, height="480px")
+    exported_explicit_webgpu = read(output_explicit_webgpu, String)
+    @test occursin("window.LargeGraphsWebGPU.render", exported_explicit_webgpu)
+    @test !occursin("cdn.jsdelivr.net/npm/pixi.js", exported_explicit_webgpu)
 end

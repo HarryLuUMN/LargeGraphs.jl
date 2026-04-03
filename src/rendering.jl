@@ -5,7 +5,8 @@
 Write a standalone HTML document containing the graph viewer.
 
 When `self_contained=true`, the export embeds an offline canvas runtime that
-does not fetch Sigma.js from a CDN.
+does not fetch Sigma.js from a CDN unless the `SigmaGraph` already stores an
+explicit runtime such as `:sigma` or `:webgpu`.
 """
 function savehtml(path::AbstractString, value::SigmaGraph; self_contained=true, runtime=:auto)
     open(path, "w") do io
@@ -15,15 +16,15 @@ function savehtml(path::AbstractString, value::SigmaGraph; self_contained=true, 
 end
 
 function savehtml(path::AbstractString, nodes, edges; self_contained=true, runtime=:auto, kwargs...)
-    savehtml(path, render(nodes, edges; kwargs...); self_contained=self_contained, runtime=runtime)
+    savehtml(path, render(nodes, edges; runtime=runtime, kwargs...); self_contained=self_contained, runtime=runtime)
 end
 
 function Base.show(io::IO, ::MIME"text/html", value::SigmaGraph)
-    _write_html(io, value)
+    _write_html(io, value; runtime=value.runtime)
 end
 
 function Base.show(io::IO, ::MIME"text/plain", value::SigmaGraph)
-    print(io, "SigmaGraph($(length(value.nodes)) nodes, $(length(value.edges)) edges)")
+    print(io, "SigmaGraph($(length(value.nodes)) nodes, $(length(value.edges)) edges, runtime=$(value.runtime))")
 end
 
 function _graph_payload(value::SigmaGraph)
@@ -110,10 +111,11 @@ function _trim_float(value::AbstractFloat)
 end
 
 function _write_html(io::IO, value::SigmaGraph; runtime=:sigma)
+    resolved_runtime = _resolve_display_runtime(runtime)
     graph_id = _escape_html_attribute(value.id)
     payload_id = _escape_html_attribute("$(value.id)-payload")
     payload = _escape_script_data(JSON3.write(_graph_payload(value)))
-    bootstrap, invocation = _runtime_bootstrap(runtime, value.id)
+    bootstrap, invocation = _runtime_bootstrap(resolved_runtime, value.id)
     print(io, """
     <div id="$(graph_id)" class="large-graphs-jl-root" style="width: $(_escape_html_attribute(value.config.width));">
       <div class="large-graphs-jl-stage" style="width: 100%; height: $(_escape_html_attribute(value.config.height)); background: $(_escape_html_attribute(value.config.background));"></div>
@@ -127,7 +129,7 @@ function _write_html(io::IO, value::SigmaGraph; runtime=:sigma)
 end
 
 function _write_standalone_html(io::IO, value::SigmaGraph; self_contained=true, runtime=:auto)
-    resolved_runtime = _resolve_export_runtime(runtime; self_contained=self_contained)
+    resolved_runtime = _resolve_export_runtime(runtime, value.runtime; self_contained=self_contained)
     print(io, """
     <!doctype html>
     <html>
@@ -145,15 +147,34 @@ function _write_standalone_html(io::IO, value::SigmaGraph; self_contained=true, 
     """)
 end
 
-_resolve_export_runtime(runtime::Symbol; self_contained::Bool) = runtime === :auto ? (self_contained ? :offline_canvas : :sigma) : runtime
+function _resolve_display_runtime(runtime)
+    normalized = _normalize_runtime(runtime)
+    normalized === :auto ? :sigma : normalized
+end
+
+function _resolve_export_runtime(runtime, graph_runtime; self_contained::Bool)
+    requested_runtime = _normalize_runtime(runtime)
+    persisted_runtime = _normalize_runtime(graph_runtime)
+    requested_runtime !== :auto && return requested_runtime
+    persisted_runtime !== :auto && return persisted_runtime
+    self_contained ? :offline_canvas : :sigma
+end
 
 const _RUNTIME_ASSETS = Dict{Symbol, String}()
 
 function _runtime_bootstrap(runtime::Symbol, id::String)
-    runtime === :sigma && return (
-        _runtime_asset(:sigma),
-        "void window.LargeGraphs.render(\"$(_escape_javascript_string(id))\");",
-    )
+    if runtime === :sigma
+        return (
+            _runtime_asset(:shared) * "\n" * _runtime_asset(:sigma),
+            "void window.LargeGraphs.render(\"$(_escape_javascript_string(id))\");",
+        )
+    end
+    if runtime === :webgpu
+        return (
+            _runtime_asset(:shared) * "\n" * _runtime_asset(:webgpu),
+            "void window.LargeGraphsWebGPU.render(\"$(_escape_javascript_string(id))\");",
+        )
+    end
     runtime === :offline_canvas && return (
         _runtime_asset(:offline_canvas),
         "void window.LargeGraphsOffline.render(\"$(_escape_javascript_string(id))\");",
@@ -163,7 +184,11 @@ end
 
 function _runtime_asset(runtime::Symbol)
     get!(_RUNTIME_ASSETS, runtime) do
-        filename = runtime === :sigma ? "sigma-viewer.js" : runtime === :offline_canvas ? "offline-viewer.js" : error("Unsupported HTML runtime: $(runtime)")
+        filename = runtime === :shared ? "runtime-core.js" :
+            runtime === :sigma ? "sigma-viewer.js" :
+            runtime === :webgpu ? "webgpu-viewer.js" :
+            runtime === :offline_canvas ? "offline-viewer.js" :
+            error("Unsupported HTML runtime: $(runtime)")
         read(joinpath(pkgdir(@__MODULE__), "assets", filename), String)
     end
 end
